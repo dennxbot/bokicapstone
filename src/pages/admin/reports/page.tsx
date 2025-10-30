@@ -31,12 +31,31 @@ interface ReportData {
   };
 }
 
+interface OrderData {
+  id: string;
+  created_at: string;
+  total_amount: number;
+  status: string;
+  order_type: 'delivery' | 'pickup';
+  payment_method: 'cash' | 'card' | 'online';
+  order_items: Array<{
+    quantity: number;
+    size_name?: string;
+    food_items: {
+      name: string;
+    };
+  }>;
+}
+
 const AdminReports = () => {
   const navigate = useNavigate();
   const { isLoading, isAuthenticated, isAdmin } = useAuth();
   const [dateRange, setDateRange] = useState('today');
   const [reportData, setReportData] = useState<ReportData | null>(null);
+  const [ordersData, setOrdersData] = useState<OrderData[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [showExportOptions, setShowExportOptions] = useState(false);
 
   useEffect(() => {
     // Wait for auth to load before checking
@@ -50,6 +69,21 @@ const AdminReports = () => {
 
     fetchReportData();
   }, [isAuthenticated, isAdmin, isLoading, navigate, dateRange]);
+
+  // Close export options when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showExportOptions) {
+        const target = event.target as Element;
+        if (!target.closest('.export-dropdown')) {
+          setShowExportOptions(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showExportOptions]);
 
   const getDateRange = () => {
     const now = new Date();
@@ -164,6 +198,9 @@ const AdminReports = () => {
         ordersByStatus,
       });
 
+      // Store individual order data for CSV export
+      setOrdersData(orders || []);
+
     } catch (error) {
       console.error('Error fetching report data:', error);
     } finally {
@@ -171,47 +208,172 @@ const AdminReports = () => {
     }
   };
 
-  const exportReport = () => {
+  const exportReport = async (format: 'csv' | 'json' = 'csv', dataType: 'full' | 'summary' | 'sales' | 'items' = 'full') => {
+    if (!reportData) return;
+    
+    setIsExporting(true);
+    setShowExportOptions(false);
+    
+    try {
+      if (format === 'csv') {
+        await exportCSV(dataType);
+      } else if (format === 'json') {
+        await exportJSON(dataType);
+      }
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('❌ Export failed. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const exportCSV = async (dataType: 'full' | 'summary' | 'sales' | 'items') => {
+    if (!reportData || !ordersData.length) return;
+    
+    // Helper function to escape CSV values
+    const escapeCSV = (value: string | number) => {
+      const str = String(value);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    // Helper function to format currency for CSV (using PHP to avoid encoding issues)
+    const formatCurrency = (amount: number) => {
+      return `PHP ${amount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    };
+
+    // Helper function to format payment method
+    const formatPaymentMethod = (paymentMethod: string, orderType: string) => {
+      if (paymentMethod === 'cash') {
+        return orderType === 'delivery' ? 'Cash on Delivery' : 'Pay on Pickup';
+      }
+      return paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1);
+    };
+
+    // Helper function to format order items
+    const formatOrderItems = (orderItems: any[]) => {
+      return orderItems.map(item => {
+        const itemName = item.food_items?.name || 'Unknown Item';
+        const quantity = item.quantity;
+        const size = item.size_name ? ` (${item.size_name})` : '';
+        return `${quantity}x ${itemName}${size}`;
+      }).join('; ');
+    };
+
+    // Create CSV content with the requested format
+    let csvContent = '';
+    
+    // CSV Header
+    csvContent += `Date,ORDER #,Order Items,Order Type,Order Payment,Total\n`;
+
+    // Process each order and calculate overall total
+    let overallTotal = 0;
+    ordersData.forEach(order => {
+      const date = new Date(order.created_at).toLocaleDateString('en-PH');
+      const orderNumber = order.id.slice(-8).toUpperCase(); // Use last 8 characters as order number
+      const orderItems = formatOrderItems(order.order_items || []);
+      const orderType = order.order_type.charAt(0).toUpperCase() + order.order_type.slice(1);
+      const orderPayment = formatPaymentMethod(order.payment_method, order.order_type);
+      const total = formatCurrency(order.total_amount);
+
+      // Add to overall total
+      overallTotal += order.total_amount;
+
+      csvContent += `${escapeCSV(date)},${escapeCSV(orderNumber)},${escapeCSV(orderItems)},${escapeCSV(orderType)},${escapeCSV(orderPayment)},${escapeCSV(total)}\n`;
+    });
+
+    // Add overall total row
+    if (ordersData.length > 0) {
+      csvContent += `\n`; // Empty line for separation
+      csvContent += `${escapeCSV('')},${escapeCSV('')},${escapeCSV('')},${escapeCSV('')},${escapeCSV('OVERALL TOTAL:')},${escapeCSV(formatCurrency(overallTotal))}\n`;
+    }
+
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    
+    // Enhanced filename with readable timestamp
+    const timestamp = new Date().toISOString()
+      .replace(/:/g, '-')
+      .replace(/\..+/, '')
+      .replace('T', '_');
+    const filename = `BOKI_Orders_${dateRange}_${timestamp}.csv`;
+    
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.style.display = 'none';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Clean up
+    URL.revokeObjectURL(link.href);
+    
+    // Show success feedback
+    setTimeout(() => {
+      alert(`✅ Orders exported successfully!\n\nFile: ${filename}\nTotal Orders: ${ordersData.length}`);
+    }, 100);
+  };
+
+  const exportJSON = async (dataType: 'full' | 'summary' | 'sales' | 'items') => {
     if (!reportData) return;
 
-    const csvContent = [
-      ['Metric', 'Value'],
-      ['Total Orders', reportData.totalOrders.toString()],
-      ['Total Sales', `$${reportData.totalSales.toFixed(2)}`],
-      ['Average Order Value', `$${reportData.avgOrderValue.toFixed(2)}`],
-      [''],
-      ['Orders by Status', ''],
-      ['Pending', reportData.ordersByStatus.pending.toString()],
-      ['Preparing', reportData.ordersByStatus.preparing.toString()],
-      ['Ready', reportData.ordersByStatus.ready.toString()],
-      ['Out for Delivery', reportData.ordersByStatus.out_for_delivery.toString()],
-      ['Completed', reportData.ordersByStatus.completed.toString()],
-      ['Cancelled', reportData.ordersByStatus.cancelled.toString()],
-      [''],
-      ['Top Selling Items', ''],
-      ['Item Name', 'Quantity', 'Revenue'],
-      ...reportData.topSellingItems.map(item => [
-        item.name,
-        item.quantity.toString(),
-        `$${item.revenue.toFixed(2)}`
-      ]),
-      [''],
-      ['Daily Sales', ''],
-      ['Date', 'Orders', 'Sales'],
-      ...reportData.dailySales.map(day => [
-        day.date,
-        day.orders.toString(),
-        `$${day.sales.toFixed(2)}`
-      ])
-    ].map(row => row.join(',')).join('\\n');
+    let exportData: any = {
+      metadata: {
+        restaurant: 'BOKI Restaurant',
+        generatedOn: new Date().toISOString(),
+        reportPeriod: dateRange,
+        exportType: dataType,
+        timezone: 'Asia/Manila'
+      }
+    };
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `sales-report-${dateRange}-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+    if (dataType === 'full' || dataType === 'summary') {
+      exportData.summary = {
+        totalOrders: reportData.totalOrders,
+        totalSales: reportData.totalSales,
+        avgOrderValue: reportData.avgOrderValue,
+        ordersByStatus: reportData.ordersByStatus
+      };
+    }
+
+    if (dataType === 'full' || dataType === 'items') {
+      exportData.topSellingItems = reportData.topSellingItems;
+    }
+
+    if (dataType === 'full' || dataType === 'sales') {
+      exportData.dailySales = reportData.dailySales;
+    }
+
+    // Create and download file
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json;charset=utf-8;' });
+    const link = document.createElement('a');
+    
+    const timestamp = new Date().toISOString()
+      .replace(/:/g, '-')
+      .replace(/\..+/, '')
+      .replace('T', '_');
+    const filename = `BOKI_${dataType}_Report_${dateRange}_${timestamp}.json`;
+    
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.style.display = 'none';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Clean up
+    URL.revokeObjectURL(link.href);
+    
+    // Show success feedback
+    setTimeout(() => {
+      alert(`✅ ${dataType.charAt(0).toUpperCase() + dataType.slice(1)} report exported as JSON successfully!\n\nFile: ${filename}`);
+    }, 100);
   };
 
   // Show loading while checking authentication
@@ -270,13 +432,113 @@ const AdminReports = () => {
                 </h1>
                 <p className="text-slate-600 mt-1 font-medium">Comprehensive insights into your restaurant's performance</p>
               </div>
-              <Button
-                onClick={exportReport}
-                className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-6 py-3 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
-              >
-                <i className="ri-download-line mr-2"></i>
-                Export CSV
-              </Button>
+              <div className="relative export-dropdown">
+                <Button
+                  onClick={() => setShowExportOptions(!showExportOptions)}
+                  disabled={isExporting}
+                  className={`${isExporting 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 hover:scale-105'
+                  } text-white px-6 py-3 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200`}
+                >
+                  {isExporting ? (
+                    <>
+                      <i className="ri-loader-4-line mr-2 animate-spin"></i>
+                      Exporting...
+                    </>
+                  ) : (
+                    <>
+                      <i className="ri-download-line mr-2"></i>
+                      Export Report
+                      <i className="ri-arrow-down-s-line ml-1"></i>
+                    </>
+                  )}
+                </Button>
+
+                {/* Export Options Dropdown */}
+                {showExportOptions && !isExporting && (
+                  <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-200 z-50">
+                    <div className="p-4">
+                      <h3 className="text-sm font-semibold text-gray-700 mb-3">Export Options</h3>
+                      
+                      {/* Format Selection */}
+                      <div className="mb-4">
+                        <p className="text-xs text-gray-600 mb-2">Format:</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={() => exportReport('csv', 'full')}
+                            className="flex items-center justify-center px-3 py-2 text-xs bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors"
+                          >
+                            <i className="ri-file-text-line mr-1"></i>
+                            CSV
+                          </button>
+                          <button
+                            onClick={() => exportReport('json', 'full')}
+                            className="flex items-center justify-center px-3 py-2 text-xs bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
+                          >
+                            <i className="ri-code-line mr-1"></i>
+                            JSON
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Data Type Selection */}
+                      <div className="mb-3">
+                        <p className="text-xs text-gray-600 mb-2">Data Type:</p>
+                        <div className="space-y-1">
+                          <button
+                            onClick={() => exportReport('csv', 'full')}
+                            className="w-full flex items-center px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                          >
+                            <i className="ri-database-line mr-2 text-gray-500"></i>
+                            Complete Report
+                          </button>
+                          <button
+                            onClick={() => exportReport('csv', 'summary')}
+                            className="w-full flex items-center px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                          >
+                            <i className="ri-pie-chart-line mr-2 text-gray-500"></i>
+                            Summary Only
+                          </button>
+                          <button
+                            onClick={() => exportReport('csv', 'sales')}
+                            className="w-full flex items-center px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                          >
+                            <i className="ri-line-chart-line mr-2 text-gray-500"></i>
+                            Sales Data Only
+                          </button>
+                          <button
+                            onClick={() => exportReport('csv', 'items')}
+                            className="w-full flex items-center px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                          >
+                            <i className="ri-shopping-bag-line mr-2 text-gray-500"></i>
+                            Top Items Only
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Quick Actions */}
+                      <div className="pt-3 border-t border-gray-100">
+                        <p className="text-xs text-gray-600 mb-2">Quick Export:</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={() => exportReport('csv', 'summary')}
+                            className="px-3 py-2 text-xs bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+                          >
+                            CSV Summary
+                          </button>
+                          <button
+                            onClick={() => exportReport('json', 'full')}
+                            className="px-3 py-2 text-xs bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+                          >
+                            JSON Full
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

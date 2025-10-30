@@ -53,6 +53,19 @@ const AdminCustomers = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showBanHistory, setShowBanHistory] = useState(false);
   const [selectedCustomerForHistory, setSelectedCustomerForHistory] = useState<Customer | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Filter customers based on search term
+  const filteredCustomers = customers.filter(customer => {
+    if (!searchTerm) return true;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      customer.full_name.toLowerCase().includes(searchLower) ||
+      customer.email.toLowerCase().includes(searchLower) ||
+      customer.contact_number.toLowerCase().includes(searchLower)
+    );
+  });
 
   useEffect(() => {
     // Wait for auth to load before checking
@@ -316,18 +329,6 @@ const AdminCustomers = () => {
                     <div className="text-2xl font-bold text-gray-900">{customers.length}</div>
                     <div className="text-xs text-gray-600 font-medium">Total Customers</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">
-                      {customers.reduce((sum, customer) => sum + customer.totalOrders, 0)}
-                    </div>
-                    <div className="text-xs text-gray-600 font-medium">Total Orders</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {formatPesoSimple(customers.reduce((sum, customer) => sum + customer.totalSpent, 0))}
-                    </div>
-                    <div className="text-xs text-gray-600 font-medium">Total Revenue</div>
-                  </div>
                   <Button
                     onClick={fetchCustomers}
                     variant="outline"
@@ -436,63 +437,19 @@ const AdminCustomers = () => {
           </div>
         ) : (
           <div className="p-8">
-            {/* Enhanced Customer Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 p-6 hover:shadow-xl transition-all duration-200 hover:scale-105">
-                <div className="flex items-center">
-                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mr-4">
-                    <i className="ri-user-line text-2xl text-white"></i>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600 font-medium">Total Customers</p>
-                    <p className="text-3xl font-bold text-gray-900">{customers.length}</p>
-                  </div>
+            {/* Search Bar */}
+            <div className="mb-8">
+              <div className="relative max-w-lg">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <i className="ri-search-line text-gray-400"></i>
                 </div>
-              </div>
-
-              <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 p-6 hover:shadow-xl transition-all duration-200 hover:scale-105">
-                <div className="flex items-center">
-                  <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mr-4">
-                    <i className="ri-shopping-bag-line text-2xl text-white"></i>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600 font-medium">Total Orders</p>
-                    <p className="text-3xl font-bold text-gray-900">
-                      {customers.reduce((sum, customer) => sum + customer.totalOrders, 0)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 p-6 hover:shadow-xl transition-all duration-200 hover:scale-105">
-                <div className="flex items-center">
-                  <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mr-4">
-                    <i className="ri-money-dollar-circle-line text-2xl text-white"></i>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600 font-medium">Total Revenue</p>
-                    <p className="text-3xl font-bold text-gray-900">
-                      {formatPesoSimple(customers.reduce((sum, customer) => sum + customer.totalSpent, 0))}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 p-6 hover:shadow-xl transition-all duration-200 hover:scale-105">
-                <div className="flex items-center">
-                  <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-amber-600 rounded-2xl flex items-center justify-center mr-4">
-                    <i className="ri-user-star-line text-2xl text-white"></i>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600 font-medium">Avg Order Value</p>
-                    <p className="text-3xl font-bold text-gray-900">
-                      {customers.length > 0 && customers.reduce((sum, customer) => sum + customer.totalOrders, 0) > 0
-                        ? formatPesoSimple(customers.reduce((sum, customer) => sum + customer.totalSpent, 0) / 
-                           customers.reduce((sum, customer) => sum + customer.totalOrders, 0))
-                        : formatPesoSimple(0)}
-                    </p>
-                  </div>
-                </div>
+                <input
+                  type="text"
+                  placeholder="Search by name, email, or contact..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl leading-5 bg-white/70 backdrop-blur-sm placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                />
               </div>
             </div>
 
@@ -526,8 +483,8 @@ const AdminCustomers = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {customers.length > 0 ? (
-                      customers.map((customer, index) => (
+                    {filteredCustomers.length > 0 ? (
+                      filteredCustomers.map((customer, index) => (
                         <tr key={customer.id} className={`border-b border-gray-100/50 hover:bg-gray-50/50 transition-colors ${index % 2 === 0 ? 'bg-white/30' : 'bg-gray-50/30'}`}>
                           <td className="py-5 px-6">
                             <div className="flex items-center">
