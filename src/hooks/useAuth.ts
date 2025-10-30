@@ -67,6 +67,19 @@ export const useAuth = () => {
           password: '' // Don't store password in profile
         };
 
+        // Check if user is banned (only for customers) - Use server-side validation
+        if (userData.role === 'customer') {
+          const { data: banInfo, error: banError } = await supabase
+            .rpc('is_user_banned', { p_user_id: userData.id });
+
+          if (!banError && banInfo && banInfo.length > 0 && banInfo[0].is_banned) {
+            return {
+              success: false,
+              error: banInfo[0].ban_message
+            };
+          }
+        }
+
         // Store user in localStorage and state
         localStorage.setItem('currentUser', JSON.stringify(userData));
         setUser(userData);

@@ -1,11 +1,12 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../hooks/useAuth';
 import { formatPesoSimple } from '../../../lib/currency';
-import { supabase } from '../../../lib/supabase';
-import Button from '../../../components/base/Button';
 import AdminSidebar from '../../../components/feature/AdminSidebar';
+import Button from '../../../components/base/Button';
+import BanHistoryModal from '../../../components/feature/BanHistoryModal';
 
 interface Customer {
   id: string;
@@ -16,6 +17,9 @@ interface Customer {
   totalSpent: number;
   lastOrderDate: string;
   created_at: string;
+  isBanned?: boolean;
+  banReason?: string;
+  bannedUntil?: string;
 }
 
 interface CustomerOrder {
@@ -34,12 +38,21 @@ interface CustomerOrder {
 
 const AdminCustomers = () => {
   const navigate = useNavigate();
-  const { isLoading, isAuthenticated, isAdmin } = useAuth();
+  const { isLoading, isAuthenticated, isAdmin, user } = useAuth();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customerOrders, setCustomerOrders] = useState<CustomerOrder[]>([]);
   const [showCustomerOrders, setShowCustomerOrders] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showBanModal, setShowBanModal] = useState(false);
+  const [customerToBan, setCustomerToBan] = useState<Customer | null>(null);
+  const [banReason, setBanReason] = useState('');
+  const [customReason, setCustomReason] = useState('');
+  const [banDuration, setBanDuration] = useState('permanent');
+  const [banNotes, setBanNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showBanHistory, setShowBanHistory] = useState(false);
+  const [selectedCustomerForHistory, setSelectedCustomerForHistory] = useState<Customer | null>(null);
 
   useEffect(() => {
     // Wait for auth to load before checking
@@ -74,12 +87,30 @@ const AdminCustomers = () => {
 
       if (ordersError) throw ordersError;
 
+      // Fetch active ban information from customer_bans table
+      const { data: banInfo, error: banError } = await supabase
+        .from('customer_bans')
+        .select('user_id, ban_reason, custom_reason, banned_until, is_active')
+        .eq('is_active', true);
+
+      if (banError) throw banError;
+
       // Calculate customer statistics
       const customersWithStats = users?.map(user => {
         const userOrders = orders?.filter(order => order.user_id === user.id) || [];
         const totalOrders = userOrders.length;
-        const totalSpent = userOrders.reduce((sum, order) => sum + parseFloat(order.total_amount || '0'), 0);
+        // Exclude cancelled orders from total spent calculation
+        const totalSpent = userOrders
+          .filter(order => order.status !== 'cancelled')
+          .reduce((sum, order) => sum + parseFloat(order.total_amount || '0'), 0);
         const lastOrder = userOrders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+
+        // Check ban status from customer_bans table
+        const activeBan = banInfo?.find(ban => ban.user_id === user.id);
+        const isBanned = activeBan && (
+          !activeBan.banned_until || // Permanent ban (no end date)
+          new Date(activeBan.banned_until) > new Date() // Temporary ban still active
+        );
 
         return {
           id: user.id,
@@ -89,7 +120,10 @@ const AdminCustomers = () => {
           totalOrders,
           totalSpent,
           lastOrderDate: lastOrder ? lastOrder.created_at : user.created_at,
-          created_at: user.created_at
+          created_at: user.created_at,
+          isBanned: !!isBanned,
+          banReason: activeBan?.ban_reason || '',
+          bannedUntil: activeBan?.banned_until || ''
         };
       }) || [];
 
@@ -131,6 +165,98 @@ const AdminCustomers = () => {
     } catch (error) {
       console.error('Error fetching customer orders:', error);
     }
+  };
+
+  const handleBackToCustomers = async () => {
+    setShowCustomerOrders(false);
+    // Refresh customer data to ensure it's up-to-date
+    await fetchCustomers();
+  };
+
+  const openBanModal = (customer: Customer) => {
+    setCustomerToBan(customer);
+    setShowBanModal(true);
+    setBanReason('');
+    setCustomReason('');
+    setBanDuration('permanent');
+    setBanNotes('');
+  };
+
+  const closeBanModal = () => {
+    setShowBanModal(false);
+    setCustomerToBan(null);
+    setBanReason('');
+    setCustomReason('');
+    setBanDuration('permanent');
+    setBanNotes('');
+  };
+
+  const handleBanCustomer = async () => {
+    if (!customerToBan || !banReason || !user) return;
+
+    try {
+      setIsSubmitting(true);
+
+      let bannedUntil = null;
+      if (banDuration !== 'permanent') {
+        const now = new Date();
+        const days = parseInt(banDuration);
+        bannedUntil = new Date(now.getTime() + days * 24 * 60 * 60 * 1000).toISOString();
+      }
+
+      const { error } = await supabase.rpc('ban_customer', {
+        p_user_id: customerToBan.id,
+        p_banned_by: user.id,
+        p_ban_reason: banReason,
+        p_custom_reason: banReason === 'other' ? customReason : null,
+        p_banned_until: bannedUntil,
+        p_notes: banNotes || null
+      });
+
+      if (error) throw error;
+
+      closeBanModal();
+      fetchCustomers(); // Refresh the customer list
+    } catch (error) {
+      console.error('Error banning customer:', error);
+      alert('Failed to ban customer. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUnbanCustomer = async (customer: Customer) => {
+    if (!user) return;
+
+    if (!confirm(`Are you sure you want to unban ${customer.full_name}?`)) return;
+
+    try {
+      const { error } = await supabase.rpc('unban_customer', {
+        p_user_id: customer.id,
+        p_unbanned_by: user.id
+      });
+
+      if (error) throw error;
+
+      fetchCustomers(); // Refresh the customer list
+    } catch (error) {
+      console.error('Error unbanning customer:', error);
+      alert('Failed to unban customer. Please try again.');
+    }
+  };
+
+  const getBanReasonLabel = (reason: string) => {
+    const reasons = {
+      'fake_orders': 'Fake/Fraudulent Orders',
+      'payment_abuse': 'Payment Abuse',
+      'frequent_cancellations': 'Frequent Cancellations',
+      'abusive_behavior': 'Abusive Behavior',
+      'multiple_fake_accounts': 'Multiple Fake Accounts',
+      'false_reports': 'False Reports/Scams',
+      'policy_violations': 'Policy Violations',
+      'other': 'Other'
+    };
+    return reasons[reason as keyof typeof reasons] || reason;
   };
 
   const getStatusColor = (status: string) => {
@@ -202,6 +328,15 @@ const AdminCustomers = () => {
                     </div>
                     <div className="text-xs text-gray-600 font-medium">Total Revenue</div>
                   </div>
+                  <Button
+                    onClick={fetchCustomers}
+                    variant="outline"
+                    className="bg-blue-50 border-2 border-blue-300 text-blue-700 hover:bg-blue-100 px-4 py-2 font-semibold rounded-xl transition-all duration-200 hover:scale-105"
+                    disabled={loading}
+                  >
+                    <i className="ri-refresh-line mr-2"></i>
+                    {loading ? 'Refreshing...' : 'Refresh'}
+                  </Button>
                 </div>
               )}
             </div>
@@ -224,7 +359,7 @@ const AdminCustomers = () => {
                     </div>
                   </div>
                   <Button
-                    onClick={() => setShowCustomerOrders(false)}
+                    onClick={handleBackToCustomers}
                     variant="outline"
                     className="bg-gray-50 border-2 border-gray-300 text-gray-700 hover:bg-gray-100 px-6 py-3 font-semibold rounded-xl transition-all duration-200 hover:scale-105"
                   >
@@ -385,6 +520,7 @@ const AdminCustomers = () => {
                       <th className="text-left py-4 px-6 font-bold text-gray-700 border-b border-gray-200/50">Contact</th>
                       <th className="text-left py-4 px-6 font-bold text-gray-700 border-b border-gray-200/50">Orders</th>
                       <th className="text-left py-4 px-6 font-bold text-gray-700 border-b border-gray-200/50">Total Spent</th>
+                      <th className="text-left py-4 px-6 font-bold text-gray-700 border-b border-gray-200/50">Status</th>
                       <th className="text-left py-4 px-6 font-bold text-gray-700 border-b border-gray-200/50">Last Order</th>
                       <th className="text-left py-4 px-6 font-bold text-gray-700 border-b border-gray-200/50">Actions</th>
                     </tr>
@@ -424,6 +560,34 @@ const AdminCustomers = () => {
                             </div>
                           </td>
                           <td className="py-5 px-6">
+                            {customer.isBanned ? (
+                              <div className="flex items-center">
+                                <div className="bg-red-100 border border-red-200 rounded-lg px-3 py-2">
+                                  <div className="flex items-center">
+                                    <i className="ri-forbid-line text-red-600 mr-2"></i>
+                                    <div>
+                                      <span className="text-sm font-bold text-red-700">BANNED</span>
+                                      {customer.banReason && (
+                                        <p className="text-xs text-red-600 mt-1">
+                                          {getBanReasonLabel(customer.banReason)}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center">
+                                <div className="bg-green-100 border border-green-200 rounded-lg px-3 py-2">
+                                  <div className="flex items-center">
+                                    <i className="ri-check-line text-green-600 mr-2"></i>
+                                    <span className="text-sm font-bold text-green-700">ACTIVE</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-5 px-6">
                             <div className="flex items-center">
                               <i className="ri-calendar-line text-gray-400 mr-2"></i>
                               <span className="text-sm text-gray-600 font-medium">
@@ -435,18 +599,49 @@ const AdminCustomers = () => {
                             </div>
                           </td>
                           <td className="py-5 px-6">
-                            <Button
-                              onClick={() => viewCustomerOrders(customer)}
-                              className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-200 hover:scale-105 ${
-                                customer.totalOrders === 0
-                                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                  : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl'
-                              }`}
-                              disabled={customer.totalOrders === 0}
-                            >
-                              <i className="ri-eye-line mr-1"></i>
-                              View Orders
-                            </Button>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                onClick={() => viewCustomerOrders(customer)}
+                                className={`px-3 py-2 text-sm font-semibold rounded-xl transition-all duration-200 hover:scale-105 ${
+                                  customer.totalOrders === 0
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl'
+                                }`}
+                                disabled={customer.totalOrders === 0}
+                              >
+                                <i className="ri-eye-line mr-1"></i>
+                                View Orders
+                              </Button>
+                              
+                              {customer.isBanned ? (
+                                <Button
+                                  onClick={() => handleUnbanCustomer(customer)}
+                                  className="px-3 py-2 text-sm font-semibold rounded-xl transition-all duration-200 hover:scale-105 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl"
+                                >
+                                  <i className="ri-check-line mr-1"></i>
+                                  Unban
+                                </Button>
+                              ) : (
+                                <Button
+                                  onClick={() => openBanModal(customer)}
+                                  className="px-3 py-2 text-sm font-semibold rounded-xl transition-all duration-200 hover:scale-105 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg hover:shadow-xl"
+                                >
+                                  <i className="ri-forbid-line mr-1"></i>
+                                  Ban
+                                </Button>
+                              )}
+                              
+                              <Button
+                                onClick={() => {
+                                  setSelectedCustomerForHistory(customer);
+                                  setShowBanHistory(true);
+                                }}
+                                className="px-3 py-2 text-sm font-semibold rounded-xl transition-all duration-200 hover:scale-105 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white shadow-lg hover:shadow-xl"
+                              >
+                                <i className="ri-history-line mr-1"></i>
+                                History
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -468,6 +663,144 @@ const AdminCustomers = () => {
           </div>
         )}
       </div>
+
+      {/* Ban Customer Modal */}
+      {showBanModal && customerToBan && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-800">Ban Customer</h3>
+              <button
+                onClick={closeBanModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <i className="ri-close-line text-xl"></i>
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-gray-600 mb-2">
+                You are about to ban <strong>{customerToBan.full_name}</strong>
+              </p>
+              <p className="text-sm text-gray-500">
+                Email: {customerToBan.email}
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Ban Reason *
+                </label>
+                <select
+                  value={banReason}
+                  onChange={(e) => setBanReason(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  required
+                >
+                  <option value="">Select a reason</option>
+                  <option value="fake_orders">Fake or fraudulent orders</option>
+                  <option value="payment_abuse">Payment abuse</option>
+                  <option value="frequent_cancellations">Frequent order cancellations</option>
+                  <option value="abusive_behavior">Abusive behavior</option>
+                  <option value="multiple_accounts">Multiple fake accounts</option>
+                  <option value="false_reports">False reports or scams</option>
+                  <option value="policy_violations">Policy violations</option>
+                  <option value="other">Other (specify below)</option>
+                </select>
+              </div>
+
+              {banReason === 'other' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Custom Reason *
+                  </label>
+                  <input
+                    type="text"
+                    value={customReason}
+                    onChange={(e) => setCustomReason(e.target.value)}
+                    placeholder="Enter custom ban reason"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    required
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Ban Duration *
+                </label>
+                <select
+                  value={banDuration}
+                  onChange={(e) => setBanDuration(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  required
+                >
+                  <option value="">Select duration</option>
+                  <option value="1">1 Day</option>
+                  <option value="3">3 Days</option>
+                  <option value="7">1 Week</option>
+                  <option value="30">1 Month</option>
+                  <option value="90">3 Months</option>
+                  <option value="365">1 Year</option>
+                  <option value="permanent">Permanent</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Additional Notes (Optional)
+                </label>
+                <textarea
+                  value={banNotes}
+                  onChange={(e) => setBanNotes(e.target.value)}
+                  placeholder="Add any additional notes about this ban..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-8">
+              <Button
+                onClick={closeBanModal}
+                className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleBanCustomer}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                disabled={isSubmitting || !banReason || !banDuration || (banReason === 'other' && !customReason)}
+              >
+                {isSubmitting ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Banning...
+                  </div>
+                ) : (
+                  'Ban Customer'
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Ban History Modal */}
+       {showBanHistory && selectedCustomerForHistory && (
+         <BanHistoryModal
+           customerId={selectedCustomerForHistory.id}
+           customerName={selectedCustomerForHistory.full_name}
+           customerEmail={selectedCustomerForHistory.email}
+           isOpen={showBanHistory}
+           onClose={() => {
+             setShowBanHistory(false);
+             setSelectedCustomerForHistory(null);
+           }}
+         />
+       )}
     </div>
   );
 };
