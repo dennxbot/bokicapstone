@@ -17,10 +17,17 @@ const AdminSidebar = () => {
     },
     {
       icon: 'ri-shopping-bag-line',
-      label: 'Orders',
+      label: 'Online Orders',
       path: '/admin/orders',
       active: location.pathname === '/admin/orders',
-      description: 'Manage Orders'
+      description: 'Manage Online Orders'
+    },
+    {
+      icon: 'ri-money-dollar-circle-line',
+      label: 'Kiosk Orders',
+      path: '/admin/cashier',
+      active: location.pathname === '/admin/cashier',
+      description: 'Process Kiosk Payments'
     },
     {
       icon: 'ri-restaurant-line',

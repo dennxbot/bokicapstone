@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
 import { useAuth } from './useAuth';
 
 interface KioskConfig {
@@ -25,7 +24,7 @@ export const useKioskAuth = () => {
     sessionTimeout: 30, // 30 minutes
     kioskUser: {
       email: 'kiosk@boki.com',
-      password: 'BOKI_Kiosk_2024!',
+      password: 'kiosk_terminal_2024',
       name: 'BOKI Kiosk Terminal'
     }
   };

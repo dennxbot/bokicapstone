@@ -456,6 +456,8 @@ export const useCart = () => {
     orderType: 'delivery' | 'pickup';
     paymentMethod: 'cash' | 'card';
     userId: string;
+    status?: 'pending' | 'pending_payment' | 'preparing' | 'ready' | 'out_for_delivery' | 'completed' | 'cancelled';
+    orderNumber?: string;
   }) => {
     if (items.length === 0) {
       throw new Error('Cart is empty');
@@ -483,20 +485,32 @@ export const useCart = () => {
 
       // Create the order
       console.log('📝 Creating order in database...');
+      const orderInsertData: any = {
+        user_id: orderData.userId,
+        customer_name: orderData.customerName,
+        customer_email: orderData.customerEmail,
+        customer_phone: orderData.customerPhone,
+        customer_address: orderData.customerAddress,
+        order_type: orderData.orderType,
+        payment_method: orderData.paymentMethod,
+        status: orderData.status || 'pending',
+        total_amount: getTotalPrice(),
+        notes: null
+      };
+
+      // Add order number if provided (for kiosk mode)
+      // Note: This requires the order_number field to be added to the orders table
+      if (orderData.orderNumber) {
+        try {
+          orderInsertData.order_number = orderData.orderNumber;
+        } catch (error) {
+          console.warn('⚠️ order_number field not available in database yet. Migration needed.');
+        }
+      }
+
       const { data: order, error: orderError } = await supabase
         .from('orders')
-        .insert({
-          user_id: orderData.userId,
-          customer_name: orderData.customerName,
-          customer_email: orderData.customerEmail,
-          customer_phone: orderData.customerPhone,
-          customer_address: orderData.customerAddress,
-          order_type: orderData.orderType,
-          payment_method: orderData.paymentMethod,
-          status: 'pending',
-          total_amount: getTotalPrice(),
-          notes: null
-        })
+        .insert(orderInsertData)
         .select()
         .single();
 
@@ -543,7 +557,8 @@ export const useCart = () => {
         id: order.id,
         items: items,
         total: getTotalPrice(),
-        status: 'pending',
+        status: orderData.status || 'pending',
+        orderNumber: orderData.orderNumber || order.id,
         customerInfo: {
           fullName: orderData.customerName,
           contactNumber: orderData.customerPhone,

@@ -18,6 +18,13 @@
   to = "/index.html"
   status = 200
 
+# Kiosk-specific redirect (optional subdomain support)
+[[redirects]]
+  from = "https://kiosk.your-domain.com/*"
+  to = "https://your-main-domain.com/kiosk"
+  status = 301
+  force = true
+
 # Headers for security and performance
 [[headers]]
   for = "/*"
@@ -26,6 +33,20 @@
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
+    # Add CSP for better security
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; font-src 'self' data:;"
+
+# Kiosk-specific headers for better performance and security
+[[headers]]
+  for = "/kiosk"
+  [headers.values]
+    # Prevent caching for kiosk page to ensure fresh sessions
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+    # Additional security for kiosk terminals
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
 
 # Cache static assets
 [[headers]]
@@ -38,3 +59,10 @@
   for = "/sw.js"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
+
+# Optimize for kiosk performance - preload critical resources
+[[headers]]
+  for = "/kiosk/*"
+  [headers.values]
+    # Preload critical resources for faster kiosk loading
+    Link = "</assets/kiosk-critical.css>; rel=preload; as=style, </assets/kiosk-critical.js>; rel=preload; as=script"

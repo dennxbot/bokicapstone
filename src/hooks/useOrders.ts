@@ -12,7 +12,7 @@ interface Order {
   customer_address: string | null;
   order_type: 'delivery' | 'pickup';
   payment_method: 'cash' | 'card' | 'online';
-  status: 'pending' | 'preparing' | 'ready' | 'out_for_delivery' | 'completed' | 'cancelled';
+  status: 'pending' | 'pending_payment' | 'preparing' | 'ready' | 'out_for_delivery' | 'completed' | 'cancelled';
   total_amount: number;
   notes: string | null;
   created_at: string;
@@ -163,7 +163,8 @@ export const useOrders = () => {
     };
   }, [fetchOrders]);
 
-  const updateOrderStatus = async (orderId: string, status: Order['status'], notes?: string) => {
+  const updateOrderStatus = async (orderId: string, status: Order['status'], notes?: string, cancellationReason?: string, cancellationNotes?: string) => {
+    console.log('🔍 updateOrderStatus called with:', { orderId, status, notes, cancellationReason, cancellationNotes });
     try {
       // Set user context for RLS
       if (user) {
@@ -173,13 +174,31 @@ export const useOrders = () => {
         });
       }
 
+      // Prepare update data
+      const updateData: any = { 
+        status,
+        updated_at: new Date().toISOString()
+      };
+
+      // Include notes in the order record if provided (especially for cancellations)
+      if (notes) {
+        updateData.notes = notes;
+      }
+
+      // Handle cancellation fields for cancelled orders
+      if (status === 'cancelled') {
+        if (cancellationReason) {
+          updateData.cancellation_reason = cancellationReason;
+        }
+        if (cancellationNotes) {
+          updateData.cancellation_notes = cancellationNotes;
+        }
+      }
+
       // Update order status
       const { error: orderError } = await supabase
         .from('orders')
-        .update({ 
-          status,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', orderId);
 
       if (orderError) throw orderError;
@@ -255,6 +274,7 @@ export const useOrders = () => {
       totalOrders: todayOrders.length,
       totalSales: todayOrders.reduce((sum, order) => sum + order.total_amount, 0),
       pendingOrders: todayOrders.filter(order => order.status === 'pending').length,
+      pendingPaymentOrders: todayOrders.filter(order => order.status === 'pending_payment').length,
       preparingOrders: todayOrders.filter(order => order.status === 'preparing').length,
       readyOrders: todayOrders.filter(order => order.status === 'ready').length,
       outForDeliveryOrders: todayOrders.filter(order => order.status === 'out_for_delivery').length,
@@ -273,7 +293,7 @@ export const useOrders = () => {
   };
 
   const getAllOrderStatuses = () => {
-    return ['pending', 'preparing', 'ready', 'out_for_delivery', 'completed', 'cancelled'] as const;
+    return ['pending', 'pending_payment', 'preparing', 'ready', 'out_for_delivery', 'completed', 'cancelled'] as const;
   };
 
   return {

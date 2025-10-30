@@ -146,6 +146,7 @@ export class NotificationService {
     const { orderId, customerName, status, previousStatus } = orderData;
     
     const statusEmojis: Record<string, string> = {
+      'pending_payment': '💳',
       'preparing': '👨‍🍳',
       'ready': '✅',
       'out_for_delivery': '🚚',

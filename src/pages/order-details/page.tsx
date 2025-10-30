@@ -80,13 +80,14 @@ const OrderDetails = () => {
   const getStatusSteps = () => {
     const steps = [
       { key: 'pending', label: 'Order Placed', icon: 'ri-check-line' },
+      { key: 'pending_payment', label: 'Payment Pending', icon: 'ri-money-dollar-circle-line' },
       { key: 'preparing', label: 'Preparing', icon: 'ri-restaurant-line' },
       { key: 'ready', label: order?.order_type === 'delivery' ? 'Ready for Delivery' : 'Ready for Pickup', icon: order?.order_type === 'delivery' ? 'ri-truck-line' : 'ri-store-line' },
       { key: 'out_for_delivery', label: order?.order_type === 'delivery' ? 'Out for Delivery' : 'Ready for Pickup', icon: order?.order_type === 'delivery' ? 'ri-truck-line' : 'ri-store-line' },
       { key: 'completed', label: 'Completed', icon: 'ri-check-double-line' }
     ];
 
-    const statusOrder = ['pending', 'preparing', 'ready', 'out_for_delivery', 'completed'];
+    const statusOrder = ['pending', 'pending_payment', 'preparing', 'ready', 'out_for_delivery', 'completed'];
     const currentIndex = statusOrder.indexOf(order?.status || 'pending');
 
     return steps.map((step, index) => ({

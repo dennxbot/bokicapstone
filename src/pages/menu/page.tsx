@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useFoodItems } from '../../hooks/useFoodItems';
 import { useCart } from '../../hooks/useCart';
 import { useAuth } from '../../hooks/useAuth';
+import { useKioskAuth } from '../../hooks/useKioskAuth';
 import { useBanStatus } from '../../hooks/useBanStatus';
 import FoodCard from '../../components/feature/FoodCard';
 import BottomNavigation from '../../components/feature/BottomNavigation';
@@ -16,6 +17,7 @@ export default function Menu() {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { user, logout } = useAuth();
+  const { isKioskMode } = useKioskAuth();
   const banStatus = useBanStatus();
   const { categories, isLoading, searchFoodItems, refetch } = useFoodItems();
   const [searchQuery, setSearchQuery] = useState('');
@@ -31,7 +33,7 @@ export default function Menu() {
   });
 
   const handleAddToCart = (item: any) => {
-    if (!user) {
+    if (!user && !isKioskMode) {
       navigate('/login');
       return;
     }
@@ -138,12 +140,16 @@ export default function Menu() {
               value={searchQuery}
               onChange={handleSearchChange}
               icon="ri-search-line"
-              className="pl-12 pr-4 py-3 text-base bg-white/70 backdrop-blur-sm border-orange-200 focus:border-orange-400 focus:ring-orange-200 rounded-2xl shadow-sm w-full"
+              className={`pl-12 pr-4 text-base bg-white/70 backdrop-blur-sm border-orange-200 focus:border-orange-400 focus:ring-orange-200 rounded-2xl shadow-sm w-full ${
+                isKioskMode ? 'py-4 text-lg' : 'py-3'
+              }`}
             />
             {searchQuery && (
               <button
                 onClick={clearSearch}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                className={`absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer ${
+                  isKioskMode ? 'text-xl' : ''
+                }`}
               >
                 <i className="ri-close-line"></i>
               </button>
@@ -158,20 +164,24 @@ export default function Menu() {
           <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide lg:flex-wrap">
             <button
               onClick={() => setSelectedCategory('All')}
-              className={`flex-shrink-0 px-6 py-3 rounded-2xl text-sm font-semibold whitespace-nowrap cursor-pointer transition-all duration-300 transform hover:scale-105 ${
+              className={`flex-shrink-0 rounded-2xl font-semibold whitespace-nowrap cursor-pointer transition-all duration-300 transform hover:scale-105 ${
+                isKioskMode ? 'px-8 py-4 text-base' : 'px-6 py-3 text-sm'
+              } ${
                 selectedCategory === 'All'
                   ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-200'
                   : 'bg-white text-gray-700 hover:bg-orange-50 border border-orange-100 shadow-sm'
               }`}
             >
-              <i className="ri-apps-line mr-2"></i>
+              <i className={`ri-apps-line ${isKioskMode ? 'mr-3 text-lg' : 'mr-2'}`}></i>
               All Items
             </button>
             {categories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
-                className={`flex-shrink-0 px-6 py-3 rounded-2xl text-sm font-semibold whitespace-nowrap cursor-pointer transition-all duration-300 transform hover:scale-105 ${
+                className={`flex-shrink-0 rounded-2xl font-semibold whitespace-nowrap cursor-pointer transition-all duration-300 transform hover:scale-105 ${
+                  isKioskMode ? 'px-8 py-4 text-base' : 'px-6 py-3 text-sm'
+                } ${
                   selectedCategory === category.id
                     ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-200'
                     : 'bg-white text-gray-700 hover:bg-orange-50 border border-orange-100 shadow-sm'
@@ -185,7 +195,11 @@ export default function Menu() {
 
         {/* Menu Grid */}
         <div className="pb-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+          <div className={`grid gap-6 ${
+            isKioskMode 
+              ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8' 
+              : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'
+          }`}>
             {filteredItems.map((item) => (
               <FoodCard
                 key={item.id}

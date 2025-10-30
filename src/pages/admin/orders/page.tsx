@@ -136,6 +136,8 @@ const AdminOrders = () => {
     switch (currentStatus) {
       case 'pending':
         return 'preparing';
+      case 'pending_payment':
+        return 'preparing'; // After payment is confirmed, start preparing
       case 'preparing':
         return 'ready'; // All orders go to 'ready' first
       case 'ready':
@@ -151,6 +153,8 @@ const AdminOrders = () => {
     switch (currentStatus) {
       case 'pending':
         return 'Start Preparing';
+      case 'pending_payment':
+        return 'Confirm Payment & Start Preparing';
       case 'preparing':
         return 'Mark as Ready'; // All orders go to 'ready' first
       case 'ready':

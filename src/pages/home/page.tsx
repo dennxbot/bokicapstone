@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useFoodItems } from '../../hooks/useFoodItems';
 import { useCart } from '../../hooks/useCart';
 import { useAuth } from '../../hooks/useAuth';
+import { useKioskAuth } from '../../hooks/useKioskAuth';
 import FoodCard from '../../components/feature/FoodCard';
 import BottomNavigation from '../../components/feature/BottomNavigation';
 import FloatingCartButton from '../../components/feature/FloatingCartButton';
@@ -13,13 +14,14 @@ export default function Home() {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { user } = useAuth();
+  const { isKioskMode } = useKioskAuth();
   const { foodItems, categories, isLoading } = useFoodItems();
   const [showAddToCartMessage, setShowAddToCartMessage] = useState(false);
 
   const featuredItems = foodItems.filter(item => item.is_featured);
 
   const handleAddToCart = (item: any) => {
-    if (!user) {
+    if (!user && !isKioskMode) {
       navigate('/login');
       return;
     }
@@ -203,7 +205,7 @@ export default function Home() {
                 <i className="ri-shopping-cart-line mr-3 text-xl"></i>
                 Start Ordering
               </Button>
-              {!user && (
+              {!user && !isKioskMode && (
                 <Button
                   onClick={() => navigate('/signup')}
                   variant="outline"

@@ -20,11 +20,15 @@ const NotFound = lazy(() => import('../pages/NotFound'));
 const AdminDashboard = lazy(() => import('../pages/admin/dashboard/page'));
 const AdminMenu = lazy(() => import('../pages/admin/menu/page'));
 const AdminOrders = lazy(() => import('../pages/admin/orders/page'));
+const AdminCashier = lazy(() => import('../pages/admin/cashier/page'));
 const AdminCustomers = lazy(() => import('../pages/admin/customers/page'));
 const AdminReports = lazy(() => import('../pages/admin/reports/page'));
 const AdminCategories = lazy(() => import('../pages/admin/categories/page'));
 const AdminSizes = lazy(() => import('../pages/admin/sizes/page'));
 const AdminNotifications = lazy(() => import('../pages/admin/notifications/page'));
+
+// Kiosk page
+const KioskPage = lazy(() => import('../pages/kiosk/page'));
 
 const routes: RouteObject[] = [
   {
@@ -96,6 +100,10 @@ const routes: RouteObject[] = [
     element: <AdminOrders />,
   },
   {
+    path: '/admin/cashier',
+    element: <AdminCashier />,
+  },
+  {
     path: '/admin/customers',
     element: <AdminCustomers />,
   },
@@ -106,6 +114,10 @@ const routes: RouteObject[] = [
   {
     path: '/admin/notifications',
     element: <AdminNotifications />,
+  },
+  {
+    path: '/kiosk',
+    element: <KioskPage />,
   },
   {
     path: '*',

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../hooks/useCart';
 import { formatPesoSimple } from '../../lib/currency';
 import { useAuth } from '../../hooks/useAuth';
+import { useKioskAuth } from '../../hooks/useKioskAuth';
 import { useBanStatus } from '../../hooks/useBanStatus';
 import Button from '../../components/base/Button';
 import BottomNavigation from '../../components/feature/BottomNavigation';
@@ -12,6 +13,7 @@ export default function Cart() {
   const navigate = useNavigate();
   const { items: cartItems, updateQuantity, removeFromCart, getTotalPrice } = useCart();
   const { user, logout } = useAuth();
+  const { isKioskMode } = useKioskAuth();
   const banStatus = useBanStatus();
 
   // Add loading state check
@@ -39,7 +41,7 @@ export default function Cart() {
     );
   }
 
-  if (!user) {
+  if (!user && !isKioskMode) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 flex items-center justify-center pb-20 lg:pb-8">
         <div className="text-center bg-white rounded-3xl p-8 shadow-xl border border-orange-100 max-w-sm mx-4">
@@ -112,7 +114,8 @@ export default function Cart() {
 
   const deliveryFee = 2.99;
   const subtotal = getTotalPrice();
-  const total = subtotal + deliveryFee;
+  // Don't add delivery fee in kiosk mode (dine-in/take-out)
+  const total = isKioskMode ? subtotal : subtotal + deliveryFee;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 pb-20 lg:pb-8">
@@ -167,28 +170,38 @@ export default function Cart() {
                       
                       <div className="flex items-center justify-between mt-3 lg:mt-4">
                         {/* Quantity Controls */}
-                        <div className="flex items-center gap-2 lg:gap-3 bg-gray-50 rounded-xl lg:rounded-2xl p-2">
+                        <div className={`flex items-center bg-gray-50 rounded-xl lg:rounded-2xl p-2 ${
+                          isKioskMode ? 'gap-4' : 'gap-2 lg:gap-3'
+                        }`}>
                           <button
                             onClick={() => updateQuantity(item.id, item.quantity - 1, item.size_option_id)}
-                            className="w-7 h-7 lg:w-8 lg:h-8 rounded-full bg-white border border-orange-200 flex items-center justify-center hover:bg-orange-50 hover:border-orange-300 cursor-pointer transition-all duration-300"
+                            className={`rounded-full bg-white border border-orange-200 flex items-center justify-center hover:bg-orange-50 hover:border-orange-300 cursor-pointer transition-all duration-300 ${
+                              isKioskMode ? 'w-10 h-10' : 'w-7 h-7 lg:w-8 lg:h-8'
+                            }`}
                           >
-                            <i className="ri-subtract-line text-sm text-orange-600" />
+                            <i className={`ri-subtract-line text-orange-600 ${isKioskMode ? 'text-lg' : 'text-sm'}`} />
                           </button>
-                          <span className="font-bold w-6 lg:w-8 text-center text-gray-900 text-sm lg:text-base">{item.quantity}</span>
+                          <span className={`font-bold text-center text-gray-900 ${
+                            isKioskMode ? 'w-12 text-lg' : 'w-6 lg:w-8 text-sm lg:text-base'
+                          }`}>{item.quantity}</span>
                           <button
                             onClick={() => updateQuantity(item.id, item.quantity + 1, item.size_option_id)}
-                            className="w-7 h-7 lg:w-8 lg:h-8 rounded-full bg-white border border-orange-200 flex items-center justify-center hover:bg-orange-50 hover:border-orange-300 cursor-pointer transition-all duration-300"
+                            className={`rounded-full bg-white border border-orange-200 flex items-center justify-center hover:bg-orange-50 hover:border-orange-300 cursor-pointer transition-all duration-300 ${
+                              isKioskMode ? 'w-10 h-10' : 'w-7 h-7 lg:w-8 lg:h-8'
+                            }`}
                           >
-                            <i className="ri-add-line text-sm text-orange-600" />
+                            <i className={`ri-add-line text-orange-600 ${isKioskMode ? 'text-lg' : 'text-sm'}`} />
                           </button>
                         </div>
 
                         {/* Remove Button */}
                         <button
                           onClick={() => removeFromCart(item.id, item.size_option_id)}
-                          className="w-8 h-8 lg:w-10 lg:h-10 bg-red-50 hover:bg-red-100 rounded-full flex items-center justify-center text-red-500 hover:text-red-600 cursor-pointer transition-all duration-300"
+                          className={`bg-red-50 hover:bg-red-100 rounded-full flex items-center justify-center text-red-500 hover:text-red-600 cursor-pointer transition-all duration-300 ${
+                            isKioskMode ? 'w-12 h-12' : 'w-8 h-8 lg:w-10 lg:h-10'
+                          }`}
                         >
-                          <i className="ri-delete-bin-line text-sm lg:text-base" />
+                          <i className={`ri-delete-bin-line ${isKioskMode ? 'text-lg' : 'text-sm lg:text-base'}`} />
                         </button>
                       </div>
                     </div>
@@ -224,13 +237,15 @@ export default function Cart() {
                     </span>
                     <span className="font-semibold text-gray-900">{formatPesoSimple(subtotal)}</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600 flex items-center text-sm lg:text-base">
-                      <i className="ri-truck-line mr-2 text-orange-400"></i>
-                      Delivery Fee
-                    </span>
-                    <span className="font-semibold text-gray-900">{formatPesoSimple(deliveryFee)}</span>
-                  </div>
+                  {!isKioskMode && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 flex items-center text-sm lg:text-base">
+                        <i className="ri-truck-line mr-2 text-orange-400"></i>
+                        Delivery Fee
+                      </span>
+                      <span className="font-semibold text-gray-900">{formatPesoSimple(deliveryFee)}</span>
+                    </div>
+                  )}
                   <div className="border-t border-gray-200 pt-3 lg:pt-4">
                     <div className="flex justify-between items-center">
                       <span className="font-bold text-lg lg:text-xl text-gray-900">Total</span>
@@ -258,10 +273,12 @@ export default function Cart() {
               {/* Checkout Button */}
               <Button
                 onClick={() => navigate('/checkout')}
-                className="w-full py-3 lg:py-4 text-base lg:text-lg font-bold rounded-xl lg:rounded-2xl bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
+                className={`w-full font-bold rounded-xl lg:rounded-2xl bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 ${
+                  isKioskMode ? 'py-5 text-xl' : 'py-3 lg:py-4 text-base lg:text-lg'
+                }`}
                 size="lg"
               >
-                <i className="ri-secure-payment-line mr-3" />
+                <i className={`ri-secure-payment-line ${isKioskMode ? 'mr-4 text-2xl' : 'mr-3'}`} />
                 Proceed to Checkout - {formatPesoSimple(total)}
               </Button>
             </div>

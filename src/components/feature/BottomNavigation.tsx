@@ -1,21 +1,28 @@
 
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../../hooks/useCart';
+import { useKioskAuth } from '../../hooks/useKioskAuth';
 
 export default function BottomNavigation() {
   const navigate = useNavigate();
   const location = useLocation();
   const { getTotalItems } = useCart();
+  const { isKioskMode } = useKioskAuth();
 
   const totalItems = getTotalItems();
 
-  const navItems = [
+  const allNavItems = [
     { path: '/', icon: 'ri-home-line', activeIcon: 'ri-home-fill', label: 'Home' },
     { path: '/menu', icon: 'ri-restaurant-line', activeIcon: 'ri-restaurant-fill', label: 'Menu' },
     { path: '/cart', icon: 'ri-shopping-cart-line', activeIcon: 'ri-shopping-cart-fill', label: 'Cart', badge: totalItems },
     { path: '/orders', icon: 'ri-file-list-3-line', activeIcon: 'ri-file-list-3-fill', label: 'Orders' },
     { path: '/profile', icon: 'ri-user-line', activeIcon: 'ri-user-fill', label: 'Profile' },
   ];
+
+  // Filter navigation items based on kiosk mode
+  const navItems = isKioskMode 
+    ? allNavItems.filter(item => !['orders', 'profile'].includes(item.path.replace('/', '')))
+    : allNavItems;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-orange-100 px-4 py-2 z-50 shadow-2xl">
