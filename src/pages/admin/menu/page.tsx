@@ -346,181 +346,231 @@ const AdminMenu = () => {
   // Show loading while checking authentication
   if (isLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Don't render if not authenticated or not admin
-  if (!isAuthenticated || !isAdmin) {
-    return null;
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <AdminSidebar />
-      
-      <div className="flex-1 ml-64">
-        <div className="bg-white shadow-sm border-b border-gray-200">
-          <div className="px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Menu Management</h1>
-                <p className="text-gray-600">Manage your restaurant menu items</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 flex">
+        <AdminSidebar />
+        
+        <div className="flex-1 ml-72">
+          {/* Enhanced Header */}
+          <div className="bg-white/80 backdrop-blur-sm shadow-sm border-b border-gray-200/50 sticky top-0 z-30">
+            <div className="px-8 py-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+                    Menu Management
+                  </h1>
+                  <p className="text-slate-600 mt-1 font-medium">Create and manage your restaurant menu items</p>
+                </div>
+                
+                {/* Menu Stats */}
+                <div className="flex items-center space-x-6">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-gray-900">{menuItems.length}</div>
+                    <div className="text-xs text-gray-600 font-medium">Total Items</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">{menuItems.filter(item => item.is_available).length}</div>
+                    <div className="text-xs text-gray-600 font-medium">Available</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-amber-600">{menuItems.filter(item => item.is_featured).length}</div>
+                    <div className="text-xs text-gray-600 font-medium">Featured</div>
+                  </div>
+                  <Button
+                    onClick={() => setIsAddingItem(true)}
+                    className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white px-6 py-3 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 flex items-center"
+                  >
+                    <i className="ri-add-line mr-2"></i>
+                    Add Item
+                  </Button>
+                </div>
               </div>
-              <Button
-                onClick={() => setIsAddingItem(true)}
-                className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 whitespace-nowrap"
-              >
-                <i className="ri-add-line mr-2"></i>
-                Add Item
-              </Button>
             </div>
           </div>
-        </div>
-
-        <div className="p-6">
-          {/* Add/Edit Item Modal */}
+      
+        <div className="p-8">
+          {/* Enhanced Add/Edit Item Modal */}
           {(isAddingItem || editingItem) && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-                <h2 className="text-xl font-bold mb-4">
-                  {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
-                </h2>
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/50 p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+                    <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center mr-3">
+                      <i className={`${editingItem ? 'ri-edit-line' : 'ri-add-line'} text-white`}></i>
+                    </div>
+                    {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
+                  </h2>
+                  <button
+                    onClick={() => {
+                      setIsAddingItem(false);
+                      setEditingItem(null);
+                      setSelectedSizes([]);
+                      setNewItem({
+                        name: '',
+                        description: '',
+                        price: '',
+                        category_id: '',
+                        image_url: '',
+                        is_available: true,
+                        is_featured: false
+                      });
+                    }}
+                    className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors"
+                  >
+                    <i className="ri-close-line text-gray-600"></i>
+                  </button>
+                </div>
                 
-                <div className="space-y-4">
-                  <Input
-                    label="Item Name"
-                    name="name"
-                    value={newItem.name}
-                    onChange={handleInputChange}
-                    required
-                  />
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Description
-                    </label>
-                    <textarea
-                      name="description"
-                      value={newItem.description}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <Input
+                      label="Item Name"
+                      name="name"
+                      value={newItem.name}
                       onChange={handleInputChange}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                    />
-                  </div>
-
-                  <Input
-                    label="Price"
-                    name="price"
-                    type="number"
-                    step="0.01"
-                    value={newItem.price}
-                    onChange={handleInputChange}
-                    required
-                  />
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Category
-                    </label>
-                    <select
-                      name="category_id"
-                      value={newItem.category_id}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 pr-8"
                       required
-                    >
-                      <option value="">Select a category</option>
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                    />
 
-                  <Input
-                    label="Image URL (optional)"
-                    name="image_url"
-                    value={newItem.image_url}
-                    onChange={handleInputChange}
-                  />
-
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        name="is_available"
-                        checked={newItem.is_available}
-                        onChange={handleInputChange}
-                        className="mr-2"
-                      />
-                      <label className="text-sm font-medium text-gray-700">
-                        Available for order
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Description
                       </label>
+                      <textarea
+                        name="description"
+                        value={newItem.description}
+                        onChange={handleInputChange}
+                        rows={4}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none"
+                        placeholder="Describe your delicious menu item..."
+                      />
                     </div>
 
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        name="is_featured"
-                        checked={newItem.is_featured || false}
-                        onChange={handleInputChange}
-                        className="mr-2"
-                      />
-                      <label className="text-sm font-medium text-gray-700">
-                        <i className="ri-star-line mr-1"></i>
-                        Featured item
+                    <Input
+                      label="Price"
+                      name="price"
+                      type="number"
+                      step="0.01"
+                      value={newItem.price}
+                      onChange={handleInputChange}
+                      required
+                    />
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Category
                       </label>
+                      <select
+                        name="category_id"
+                        value={newItem.category_id}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                        required
+                      >
+                        <option value="">Select a category</option>
+                        {categories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
 
-                  {/* Size Management Section */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Available Sizes (optional)
-                    </label>
-                    <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3">
-                      {sizeOptions.map((size) => (
-                        <div key={size.id} className="flex items-center">
+                  <div className="space-y-4">
+                    <Input
+                      label="Image URL (optional)"
+                      name="image_url"
+                      value={newItem.image_url}
+                      onChange={handleInputChange}
+                      placeholder="https://example.com/image.jpg"
+                    />
+
+                    <div className="bg-gray-50/50 rounded-xl p-4 border border-gray-100/50">
+                      <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                        <i className="ri-settings-line text-blue-600 mr-2"></i>
+                        Item Settings
+                      </h4>
+                      <div className="space-y-3">
+                        <div className="flex items-center p-3 bg-white/50 rounded-lg">
                           <input
                             type="checkbox"
-                            id={`size-${size.id}`}
-                            checked={selectedSizes.includes(size.id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedSizes([...selectedSizes, size.id]);
-                              } else {
-                                setSelectedSizes(selectedSizes.filter(id => id !== size.id));
-                              }
-                            }}
-                            className="mr-2"
+                            name="is_available"
+                            checked={newItem.is_available}
+                            onChange={handleInputChange}
+                            className="mr-3 w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
                           />
-                          <label htmlFor={`size-${size.id}`} className="text-sm text-gray-700 flex-1">
-                            {size.name} {size.price_multiplier !== 1 && `(${size.price_multiplier}x price)`}
-                          </label>
+                          <div>
+                            <label className="text-sm font-medium text-gray-700">
+                              Available for order
+                            </label>
+                            <p className="text-xs text-gray-500">Customers can order this item</p>
+                          </div>
                         </div>
-                      ))}
-                      {sizeOptions.length === 0 && (
-                        <p className="text-sm text-gray-500 italic">No size options available</p>
-                      )}
+
+                        <div className="flex items-center p-3 bg-white/50 rounded-lg">
+                          <input
+                            type="checkbox"
+                            name="is_featured"
+                            checked={newItem.is_featured || false}
+                            onChange={handleInputChange}
+                            className="mr-3 w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
+                          />
+                          <div>
+                            <label className="text-sm font-medium text-gray-700 flex items-center">
+                              <i className="ri-star-line mr-1"></i>
+                              Featured item
+                            </label>
+                            <p className="text-xs text-gray-500">Highlight this item to customers</p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Select which sizes are available for this menu item. If no sizes are selected, the item will use the default size.
-                    </p>
+
+                    {/* Enhanced Size Management Section */}
+                    <div className="bg-gray-50/50 rounded-xl p-4 border border-gray-100/50">
+                      <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                        <i className="ri-ruler-line text-purple-600 mr-2"></i>
+                        Available Sizes
+                      </h4>
+                      <div className="space-y-2 max-h-32 overflow-y-auto">
+                        {sizeOptions.map((size) => (
+                          <div key={size.id} className="flex items-center p-2 bg-white/50 rounded-lg">
+                            <input
+                              type="checkbox"
+                              id={`size-${size.id}`}
+                              checked={selectedSizes.includes(size.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedSizes([...selectedSizes, size.id]);
+                                } else {
+                                  setSelectedSizes(selectedSizes.filter(id => id !== size.id));
+                                }
+                              }}
+                              className="mr-3 w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
+                            />
+                            <label htmlFor={`size-${size.id}`} className="text-sm text-gray-700 flex-1">
+                              {size.name} {size.price_multiplier !== 1 && (
+                                <span className="text-orange-600 font-medium">({size.price_multiplier}x price)</span>
+                              )}
+                            </label>
+                          </div>
+                        ))}
+                        {sizeOptions.length === 0 && (
+                          <p className="text-sm text-gray-500 italic text-center py-4">No size options available</p>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">
+                        Select which sizes are available for this menu item. If no sizes are selected, the item will use the default size.
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex space-x-3 mt-6">
+                <div className="flex space-x-4 mt-8">
                   <Button
                     onClick={editingItem ? handleUpdateItem : handleAddItem}
-                    className="flex-1 bg-orange-600 hover:bg-orange-700 text-white py-2 whitespace-nowrap"
+                    className="flex-1 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white py-3 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
                   >
+                    <i className={`${editingItem ? 'ri-check-line' : 'ri-add-line'} mr-2`}></i>
                     {editingItem ? 'Update Item' : 'Add Item'}
                   </Button>
                   <Button
@@ -539,8 +589,9 @@ const AdminMenu = () => {
                       });
                     }}
                     variant="outline"
-                    className="flex-1 border-gray-300 text-gray-700 py-2 whitespace-nowrap"
+                    className="flex-1 border-2 border-gray-300 text-gray-700 hover:bg-gray-50 py-3 font-semibold rounded-xl transition-all duration-200 hover:scale-105"
                   >
+                    <i className="ri-close-line mr-2"></i>
                     Cancel
                   </Button>
                 </div>
@@ -548,102 +599,144 @@ const AdminMenu = () => {
             </div>
           )}
 
-          {/* Filter Tabs */}
-          <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-            <div className="flex space-x-1">
+          {/* Enhanced Filter Tabs */}
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 p-6 mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mr-3">
+                  <i className="ri-filter-line text-white text-sm"></i>
+                </div>
+                Filter Menu Items
+              </h2>
+              <div className="text-sm text-gray-600">
+                Showing {filteredItems.length} of {menuItems.length} items
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setFilter('all')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                className={`flex items-center px-4 py-3 rounded-xl font-medium transition-all duration-200 whitespace-nowrap ${
                   filter === 'all'
-                    ? 'bg-orange-100 text-orange-700'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    ? 'bg-gradient-to-r from-orange-500 to-amber-600 text-white shadow-lg scale-105'
+                    : 'bg-gray-100/50 text-gray-600 hover:text-gray-900 hover:bg-gray-200/50 hover:scale-105'
                 }`}
               >
+                <i className="ri-list-check-line mr-2"></i>
                 All Items
+                <span className={`ml-2 px-2 py-1 text-xs rounded-full font-bold ${
+                  filter === 'all' 
+                    ? 'bg-white/20 text-white' 
+                    : 'bg-gray-200 text-gray-600'
+                }`}>
+                  {menuItems.length}
+                </span>
               </button>
               <button
                 onClick={() => setFilter('featured')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                className={`flex items-center px-4 py-3 rounded-xl font-medium transition-all duration-200 whitespace-nowrap ${
                   filter === 'featured'
-                    ? 'bg-orange-100 text-orange-700'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    ? 'bg-gradient-to-r from-orange-500 to-amber-600 text-white shadow-lg scale-105'
+                    : 'bg-gray-100/50 text-gray-600 hover:text-gray-900 hover:bg-gray-200/50 hover:scale-105'
                 }`}
               >
-                <i className="ri-star-line mr-1"></i>
+                <i className="ri-star-line mr-2"></i>
                 Featured
+                <span className={`ml-2 px-2 py-1 text-xs rounded-full font-bold ${
+                  filter === 'featured' 
+                    ? 'bg-white/20 text-white' 
+                    : 'bg-gray-200 text-gray-600'
+                }`}>
+                  {menuItems.filter(item => item.is_featured).length}
+                </span>
               </button>
               {categories.map((category) => (
                 <button
                   key={category.id}
                   onClick={() => setFilter(category.id)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                  className={`flex items-center px-4 py-3 rounded-xl font-medium transition-all duration-200 whitespace-nowrap ${
                     filter === category.id
-                      ? 'bg-orange-100 text-orange-700'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                      ? 'bg-gradient-to-r from-orange-500 to-amber-600 text-white shadow-lg scale-105'
+                      : 'bg-gray-100/50 text-gray-600 hover:text-gray-900 hover:bg-gray-200/50 hover:scale-105'
                   }`}
                 >
+                  <i className="ri-restaurant-line mr-2"></i>
                   {category.name}
+                  <span className={`ml-2 px-2 py-1 text-xs rounded-full font-bold ${
+                    filter === category.id 
+                      ? 'bg-white/20 text-white' 
+                      : 'bg-gray-200 text-gray-600'
+                  }`}>
+                    {menuItems.filter(item => item.category_id === category.id).length}
+                  </span>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Menu Items Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Enhanced Menu Items Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredItems.filter(item => item && item.id).map((item) => (
-              <div key={item.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
+              <div key={item.id} className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-105">
                 <div className="relative">
                   <img
                     src={item.image_url || `https://readdy.ai/api/search-image?query=delicious%20food%20photography%20with%20simple%20clean%20background&width=400&height=300&seq=${item.id}&orientation=landscape`}
                     alt={item.name || 'Food item'}
-                    className="w-full h-48 object-cover object-top"
+                    className="w-full h-56 object-cover"
                   />
-                  <div className="absolute top-2 right-2 flex space-x-2">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                  <div className="absolute top-3 right-3 flex flex-col space-y-2">
                     <button
                       onClick={() => toggleAvailability(item.id, item.is_available)}
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg backdrop-blur-sm transition-all duration-200 hover:scale-105 ${
                         item.is_available
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
+                          ? 'bg-green-500/90 text-white'
+                          : 'bg-red-500/90 text-white'
                       }`}
                     >
+                      <i className={`${item.is_available ? 'ri-check-line' : 'ri-close-line'} mr-1`}></i>
                       {item.is_available ? 'Available' : 'Unavailable'}
                     </button>
                     {item.is_featured && (
-                      <div className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium flex items-center">
+                      <div className="bg-amber-500/90 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center shadow-lg backdrop-blur-sm">
                         <i className="ri-star-fill mr-1"></i>
                         Featured
                       </div>
                     )}
                   </div>
+                  <div className="absolute bottom-3 left-3">
+                    <span className="text-2xl font-bold text-white drop-shadow-lg">{formatPesoSimple(item.price)}</span>
+                  </div>
                 </div>
                 
-                <div className="p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-semibold text-lg">{item.name}</h3>
-                    <span className="text-lg font-bold text-orange-600">{formatPesoSimple(item.price)}</span>
+                <div className="p-6">
+                  <div className="mb-4">
+                    <h3 className="font-bold text-xl text-gray-900 mb-2">{item.name}</h3>
+                    <p className="text-gray-600 text-sm line-clamp-2 leading-relaxed">{item.description}</p>
                   </div>
                   
-                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">{item.description}</p>
-                  
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-xs text-gray-500 capitalize bg-gray-100 px-2 py-1 rounded">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-xs font-medium text-gray-700 bg-gray-100/50 px-3 py-1.5 rounded-xl capitalize">
+                      <i className="ri-restaurant-line mr-1"></i>
                       {item.category?.name || 'No Category'}
                     </span>
                   </div>
 
-                  {/* Available Sizes Display */}
-                  <div className="mb-3">
-                    <div className="text-xs font-medium text-gray-700 mb-1">Available Sizes:</div>
+                  {/* Enhanced Available Sizes Display */}
+                  <div className="mb-4">
+                    <div className="text-xs font-semibold text-gray-700 mb-2 flex items-center">
+                      <i className="ri-ruler-line mr-1"></i>
+                      Available Sizes:
+                    </div>
                     {item.sizes && item.sizes.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-wrap gap-1.5">
                         {item.sizes.map((size) => (
                           <span
                             key={size.id}
-                            className={`text-xs px-2 py-1 rounded-full ${
+                            className={`text-xs px-2.5 py-1 rounded-lg font-medium ${
                               size.is_available
-                                ? 'bg-green-100 text-green-700'
-                                : 'bg-gray-100 text-gray-500'
+                                ? 'bg-green-100 text-green-700 border border-green-200'
+                                : 'bg-gray-100 text-gray-500 border border-gray-200'
                             }`}
                           >
                             {size.name}
@@ -660,12 +753,12 @@ const AdminMenu = () => {
                     )}
                   </div>
 
-                  <div className="flex justify-between items-center">
+                  <div className="flex items-center justify-between">
                     <button
                       onClick={() => toggleFeatured(item.id, item.is_featured)}
-                      className={`flex items-center px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                      className={`flex items-center px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 hover:scale-105 ${
                         item.is_featured
-                          ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                          ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-white shadow-lg'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                       }`}
                     >
@@ -676,13 +769,13 @@ const AdminMenu = () => {
                     <div className="flex space-x-2">
                       <button
                         onClick={() => handleEditItem(item)}
-                        className="text-blue-600 hover:text-blue-700"
+                        className="w-10 h-10 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-105"
                       >
                         <i className="ri-edit-line"></i>
                       </button>
                       <button
                         onClick={() => handleDeleteItem(item.id)}
-                        className="text-red-600 hover:text-red-700"
+                        className="w-10 h-10 bg-red-100 hover:bg-red-200 text-red-600 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-105"
                       >
                         <i className="ri-delete-bin-line"></i>
                       </button>
@@ -694,14 +787,22 @@ const AdminMenu = () => {
           </div>
 
           {filteredItems.length === 0 && (
-            <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-              <i className="ri-restaurant-line text-4xl text-gray-400 mb-4"></i>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">No menu items found</h3>
-              <p className="text-gray-600 mb-4">No items match the selected category.</p>
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 p-12 text-center">
+              <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <i className="ri-restaurant-line text-3xl text-gray-400"></i>
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 mb-3">No menu items found</h3>
+              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                {filter === 'all' 
+                  ? 'No menu items have been added yet. Start building your menu by adding your first item.'
+                  : `No items match the selected filter. Try selecting a different category or add items to this category.`
+                }
+              </p>
               <Button
                 onClick={() => setIsAddingItem(true)}
-                className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 whitespace-nowrap"
+                className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white px-8 py-3 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
               >
+                <i className="ri-add-line mr-2"></i>
                 Add First Item
               </Button>
             </div>
@@ -709,6 +810,429 @@ const AdminMenu = () => {
         </div>
       </div>
     </div>
+  );
+  }
+
+  // Check authentication and admin status
+  if (!isAuthenticated || !isAdmin) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
+          <p className="text-gray-600">You need admin privileges to access this page.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 flex">
+      <AdminSidebar />
+      
+      <div className="flex-1 ml-72">
+        {/* Enhanced Header */}
+        <div className="bg-white/80 backdrop-blur-sm shadow-sm border-b border-gray-200/50 sticky top-0 z-30">
+          <div className="px-8 py-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+                  Menu Management
+                </h1>
+                <p className="text-slate-600 mt-1 font-medium">Create and manage your restaurant menu items</p>
+              </div>
+              
+              {/* Menu Stats */}
+              <div className="flex items-center space-x-6">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-gray-900">{menuItems.length}</div>
+                  <div className="text-xs text-gray-600 font-medium">Total Items</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">{menuItems.filter(item => item.is_available).length}</div>
+                  <div className="text-xs text-gray-600 font-medium">Available</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-amber-600">{menuItems.filter(item => item.is_featured).length}</div>
+                  <div className="text-xs text-gray-600 font-medium">Featured</div>
+                </div>
+                <Button
+                  onClick={() => setIsAddingItem(true)}
+                  className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white px-6 py-3 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 flex items-center"
+                >
+                  <i className="ri-add-line mr-2"></i>
+                  Add Item
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+    
+      <div className="p-8">
+        {/* Enhanced Add/Edit Item Modal */}
+        {(isAddingItem || editingItem) && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/50 p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+                  <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center mr-3">
+                    <i className={`${editingItem ? 'ri-edit-line' : 'ri-add-line'} text-white`}></i>
+                  </div>
+                  {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
+                </h2>
+                <button
+                  onClick={() => {
+                    setIsAddingItem(false);
+                    setEditingItem(null);
+                    setSelectedSizes([]);
+                    setNewItem({
+                      name: '',
+                      description: '',
+                      price: '',
+                      category_id: '',
+                      image_url: '',
+                      is_available: true,
+                      is_featured: false
+                    });
+                  }}
+                  className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors"
+                >
+                  <i className="ri-close-line text-gray-600"></i>
+                </button>
+              </div>
+
+              <form onSubmit={editingItem ? handleUpdateItem : handleAddItem} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Item Name</label>
+                    <Input
+                      type="text"
+                      name="name"
+                      value={newItem.name}
+                      onChange={handleInputChange}
+                      placeholder="Enter item name"
+                      required
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Price</label>
+                    <Input
+                      type="number"
+                      name="price"
+                      value={newItem.price}
+                      onChange={handleInputChange}
+                      placeholder="0.00"
+                      step="0.01"
+                      min="0"
+                      required
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                  <textarea
+                    name="description"
+                    value={newItem.description}
+                    onChange={handleInputChange}
+                    placeholder="Enter item description"
+                    rows={3}
+                    required
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all resize-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                    <select
+                      name="category_id"
+                      value={newItem.category_id}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                    >
+                      <option value="">Select a category</option>
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Image URL</label>
+                    <Input
+                      type="url"
+                      name="image_url"
+                      value={newItem.image_url}
+                      onChange={handleInputChange}
+                      placeholder="https://example.com/image.jpg"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-6">
+                  <label className="flex items-center space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="is_available"
+                      checked={newItem.is_available}
+                      onChange={handleInputChange}
+                      className="w-5 h-5 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Available</span>
+                  </label>
+                  <label className="flex items-center space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="is_featured"
+                      checked={newItem.is_featured}
+                      onChange={handleInputChange}
+                      className="w-5 h-5 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Featured</span>
+                  </label>
+                </div>
+
+                {/* Size Options */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">Available Sizes</label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {sizeOptions.map((size) => (
+                      <label key={size.id} className="flex items-center space-x-3 cursor-pointer p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={selectedSizes.includes(size.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedSizes([...selectedSizes, size.id]);
+                            } else {
+                              setSelectedSizes(selectedSizes.filter(id => id !== size.id));
+                            }
+                          }}
+                          className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
+                        />
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">{size.name}</span>
+                          <span className="text-xs text-gray-500 block">+{((size.price_multiplier - 1) * 100).toFixed(0)}%</span>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      setIsAddingItem(false);
+                      setEditingItem(null);
+                      setSelectedSizes([]);
+                      setNewItem({
+                        name: '',
+                        description: '',
+                        price: '',
+                        category_id: '',
+                        image_url: '',
+                        is_available: true,
+                        is_featured: false
+                      });
+                    }}
+                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium transition-colors"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white px-8 py-3 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                  >
+                    {editingItem ? 'Update Item' : 'Add Item'}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Enhanced Filter Tabs */}
+        <div className="mb-8">
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setFilter('all')}
+              className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                filter === 'all'
+                  ? 'bg-gradient-to-r from-orange-500 to-amber-600 text-white shadow-lg'
+                  : 'bg-white/70 text-gray-700 hover:bg-white hover:shadow-md'
+              }`}
+            >
+              All Items ({menuItems.length})
+            </button>
+            <button
+              onClick={() => setFilter('featured')}
+              className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                filter === 'featured'
+                  ? 'bg-gradient-to-r from-orange-500 to-amber-600 text-white shadow-lg'
+                  : 'bg-white/70 text-gray-700 hover:bg-white hover:shadow-md'
+              }`}
+            >
+              Featured ({menuItems.filter(item => item.is_featured).length})
+            </button>
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => setFilter(category.id)}
+                className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                  filter === category.id
+                    ? 'bg-gradient-to-r from-orange-500 to-amber-600 text-white shadow-lg'
+                    : 'bg-white/70 text-gray-700 hover:bg-white hover:shadow-md'
+                }`}
+              >
+                {category.name} ({menuItems.filter(item => item.category_id === category.id).length})
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Enhanced Menu Items Grid */}
+        {filteredItems.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredItems.map((item) => (
+              <div key={item.id} className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-105">
+                <div className="relative">
+                  {item.image_url ? (
+                    <img
+                      src={item.image_url}
+                      alt={item.name}
+                      className="w-full h-48 object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-48 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                      <i className="ri-image-line text-4xl text-gray-400"></i>
+                    </div>
+                  )}
+                  <div className="absolute top-3 right-3 flex space-x-2">
+                    {item.is_featured && (
+                      <span className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg">
+                        <i className="ri-star-fill mr-1"></i>
+                        Featured
+                      </span>
+                    )}
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold shadow-lg ${
+                      item.is_available 
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white' 
+                        : 'bg-gradient-to-r from-red-500 to-rose-600 text-white'
+                    }`}>
+                      {item.is_available ? 'Available' : 'Unavailable'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="p-6">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-1">{item.name}</h3>
+                      <p className="text-sm text-gray-600 font-medium">{item.category?.name}</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-orange-600">{formatPesoSimple(item.price)}</div>
+                    </div>
+                  </div>
+                  
+                  <p className="text-gray-700 text-sm mb-4 line-clamp-2">{item.description}</p>
+                  
+                  {item.sizes && item.sizes.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-xs font-semibold text-gray-600 mb-2">Available Sizes:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {item.sizes.map((size) => (
+                          <span
+                            key={size.id}
+                            className={`px-2 py-1 rounded-lg text-xs font-medium ${
+                              size.is_available
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-gray-100 text-gray-500'
+                            }`}
+                          >
+                            {size.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => toggleAvailability(item.id, item.is_available)}
+                        className={`p-2 rounded-lg transition-colors ${
+                          item.is_available
+                            ? 'bg-green-100 text-green-600 hover:bg-green-200'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                        title={item.is_available ? 'Mark as unavailable' : 'Mark as available'}
+                      >
+                        <i className={`ri-${item.is_available ? 'eye-line' : 'eye-off-line'}`}></i>
+                      </button>
+                      <button
+                        onClick={() => toggleFeatured(item.id, item.is_featured)}
+                        className={`p-2 rounded-lg transition-colors ${
+                          item.is_featured
+                            ? 'bg-amber-100 text-amber-600 hover:bg-amber-200'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                        title={item.is_featured ? 'Remove from featured' : 'Mark as featured'}
+                      >
+                        <i className={`ri-star-${item.is_featured ? 'fill' : 'line'}`}></i>
+                      </button>
+                    </div>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleEditItem(item)}
+                        className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
+                        title="Edit item"
+                      >
+                        <i className="ri-edit-line"></i>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteItem(item.id)}
+                        className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                        title="Delete item"
+                      >
+                        <i className="ri-delete-bin-line"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16">
+            <div className="w-24 h-24 bg-gradient-to-br from-orange-100 to-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <i className="ri-restaurant-line text-4xl text-orange-600"></i>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">No menu items found</h3>
+            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+              {filter === 'all' 
+                ? "Start building your menu by adding your first delicious item."
+                : `No items found in the selected ${filter === 'featured' ? 'featured' : 'category'} filter.`
+              }
+            </p>
+            <Button
+              onClick={() => setIsAddingItem(true)}
+              className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white px-8 py-3 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+            >
+              <i className="ri-add-line mr-2"></i>
+              Add First Item
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
   );
 };
 

@@ -10,7 +10,7 @@ import { notificationService } from '../../../lib/notifications';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { user, isLoading, isAuthenticated, isAdmin } = useAuth();
+  const { isLoading, isAuthenticated, isAdmin } = useAuth();
   const [stats, setStats] = useState({
     totalOrders: 0,
     pendingOrders: 0,
@@ -205,16 +205,6 @@ const AdminDashboard = () => {
     }
   };
 
-  const markNotificationRead = (id: string) => {
-    setNotifications(notifications.map(notif => 
-      notif.id === id ? { ...notif, unread: false } : notif
-    ));
-  };
-
-  const markAllNotificationsRead = () => {
-    setNotifications(notifications.map(notif => ({ ...notif, unread: false })));
-  };
-
   // Show loading while checking authentication
   if (isLoading || loading) {
     return (
@@ -232,299 +222,308 @@ const AdminDashboard = () => {
     return null;
   }
 
-  const quickActions = [
-    {
-      title: 'Point of Sale',
-      description: 'Process dine-in and walk-in orders',
-      icon: 'ri-cash-line',
-      path: '/admin/pos',
-      color: 'bg-green-500'
-    },
-    {
-      title: 'Manage Orders',
-      description: 'View and update order status',
-      icon: 'ri-shopping-bag-line',
-      path: '/admin/orders',
-      color: 'bg-blue-500'
-    },
-    {
-      title: 'Manage Menu',
-      description: 'Add, edit, or remove menu items',
-      icon: 'ri-restaurant-line',
-      path: '/admin/menu',
-      color: 'bg-orange-500'
-    },
-    {
-      title: 'View Reports',
-      description: 'Sales and performance analytics',
-      icon: 'ri-bar-chart-line',
-      path: '/admin/reports',
-      color: 'bg-purple-500'
-    }
-  ];
-
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 flex">
       <AdminSidebar />
       
-      <div className="flex-1 ml-64">
-        {/* Header */}
-        <div className="bg-white shadow-sm border-b border-gray-200">
-          <div className="px-6 py-4">
+      <div className="flex-1 ml-72">
+        {/* Enhanced Header */}
+        <div className="bg-white/80 backdrop-blur-sm shadow-sm border-b border-gray-200/50 sticky top-0 z-30">
+          <div className="px-8 py-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-                <p className="text-gray-600">Welcome back, {user?.full_name || user?.email}</p>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+                  Dashboard Overview
+                </h1>
+                <p className="text-slate-600 mt-1 font-medium">Welcome back! Here's what's happening with your restaurant today.</p>
               </div>
               
-              {/* Notifications */}
-              <div className="relative">
-                <button 
-                  onClick={() => setShowNotifications(!showNotifications)}
-                  className="relative p-2 text-gray-600 hover:text-gray-900"
-                >
-                  <i className="ri-notification-line text-xl"></i>
-                  {notifications.some(n => n.unread) && (
-                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-                  )}
-                </button>
-
-                {/* Notifications Dropdown */}
-                {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-                    <div className="p-4 border-b border-gray-200">
-                      <div className="flex items-center justify-between">
+              {/* Notification Bell */}
+              <div className="flex items-center space-x-4">
+                <div className="relative">
+                  <button
+                    onClick={() => setShowNotifications(!showNotifications)}
+                    className="relative p-3 bg-gradient-to-br from-orange-500 to-amber-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                  >
+                    <i className="ri-notification-line text-lg"></i>
+                    {notifications.length > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold shadow-lg">
+                        {notifications.length}
+                      </span>
+                    )}
+                  </button>
+                  
+                  {/* Notifications Dropdown */}
+                  {showNotifications && (
+                    <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-200/50 z-50 max-h-96 overflow-y-auto">
+                      <div className="p-4 border-b border-gray-100">
                         <h3 className="font-semibold text-gray-900">Notifications</h3>
-                        {notifications.some(n => n.unread) && (
-                          <button
-                            onClick={markAllNotificationsRead}
-                            className="text-sm text-orange-600 hover:text-orange-700"
-                          >
-                            Mark all read
-                          </button>
-                        )}
                       </div>
-                    </div>
-                    
-                    <div className="max-h-64 overflow-y-auto">
                       {notifications.length > 0 ? (
-                        notifications.map((notification) => (
-                          <div
-                            key={notification.id}
-                            className={`p-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
-                              notification.unread ? 'bg-orange-50' : ''
-                            }`}
-                            onClick={() => markNotificationRead(notification.id)}
-                          >
-                            <div className="flex items-start">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
-                                notification.type === 'new_order' ? 'bg-green-100' : 'bg-blue-100'
-                              }`}>
-                                <i className={`${
-                                  notification.type === 'new_order' ? 'ri-shopping-bag-line text-green-600' : 'ri-refresh-line text-blue-600'
-                                } text-sm`}></i>
+                        <div className="divide-y divide-gray-100">
+                          {notifications.slice(0, 5).map((notification, index) => (
+                            <div key={index} className="p-4 hover:bg-gray-50 transition-colors">
+                              <div className="flex items-start space-x-3">
+                                <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                  <i className="ri-shopping-bag-line text-orange-600 text-sm"></i>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-gray-900 truncate">
+                                    {notification.title}
+                                  </p>
+                                  <p className="text-xs text-gray-600 mt-1">
+                                    {notification.message}
+                                  </p>
+                                  <p className="text-xs text-gray-400 mt-1">
+                                    {new Date(notification.created_at).toLocaleTimeString()}
+                                  </p>
+                                </div>
                               </div>
-                              <div className="flex-1">
-                                <p className="text-sm font-medium text-gray-900">{notification.message}</p>
-                                <p className="text-xs text-gray-600">{notification.time}</p>
-                              </div>
-                              {notification.unread && (
-                                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                              )}
                             </div>
-                          </div>
-                        ))
+                          ))}
+                        </div>
                       ) : (
-                        <div className="p-4 text-center text-gray-500">
-                          <i className="ri-notification-off-line text-2xl mb-2"></i>
-                          <p className="text-sm">No notifications</p>
+                        <div className="p-8 text-center text-gray-500">
+                          <i className="ri-notification-off-line text-3xl mb-2"></i>
+                          <p>No new notifications</p>
                         </div>
                       )}
                     </div>
-                    
-                    <div className="p-3 border-t border-gray-200">
-                      <button className="w-full text-center text-sm text-orange-600 hover:text-orange-700">
-                        View all notifications
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Overlay to close dropdown */}
-                {showNotifications && (
-                  <div 
-                    className="fixed inset-0 z-40" 
-                    onClick={() => setShowNotifications(false)}
-                  ></div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
-
           </div>
         </div>
 
-        <div className="p-6">
-          {/* Stats Cards */}
+        <div className="p-8">
+          {/* Enhanced Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
-                  <i className="ri-shopping-bag-line text-xl text-blue-600"></i>
-                </div>
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Today's Orders</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.todayOrders}</p>
+                  <p className="text-blue-100 text-sm font-medium">Total Orders</p>
+                  <p className="text-3xl font-bold mt-1">{stats.totalOrders}</p>
+                  <p className="text-blue-100 text-xs mt-2">
+                    <i className="ri-arrow-up-line mr-1"></i>
+                    +12% from last month
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                  <i className="ri-shopping-bag-line text-xl"></i>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
-                  <i className="ri-money-dollar-circle-line text-xl text-green-600"></i>
-                </div>
+            <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Today's Sales</p>
-                  <p className="text-2xl font-bold text-gray-900">{formatPesoSimple(stats.todaySales)}</p>
+                  <p className="text-emerald-100 text-sm font-medium">Total Revenue</p>
+                  <p className="text-3xl font-bold mt-1">{formatPesoSimple(stats.totalRevenue)}</p>
+                  <p className="text-emerald-100 text-xs mt-2">
+                    <i className="ri-arrow-up-line mr-1"></i>
+                    +8% from last month
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                  <i className="ri-money-peso-circle-line text-xl"></i>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mr-4">
-                  <i className="ri-time-line text-xl text-orange-600"></i>
-                </div>
+            <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Pending Orders</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.pendingOrders}</p>
+                  <p className="text-amber-100 text-sm font-medium">Pending Orders</p>
+                  <p className="text-3xl font-bold mt-1">{stats.pendingOrders}</p>
+                  <p className="text-amber-100 text-xs mt-2">
+                    <i className="ri-time-line mr-1"></i>
+                    Needs attention
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                  <i className="ri-time-line text-xl"></i>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
-                  <i className="ri-check-line text-xl text-purple-600"></i>
-                </div>
+            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Completed Orders</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.completedOrders}</p>
+                  <p className="text-purple-100 text-sm font-medium">Menu Items</p>
+                  <p className="text-3xl font-bold mt-1">{stats.totalMenuItems}</p>
+                  <p className="text-purple-100 text-xs mt-2">
+                    <i className="ri-restaurant-line mr-1"></i>
+                    Active items
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                  <i className="ri-restaurant-line text-xl"></i>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Quick Actions */}
-            <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Quick Actions</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {quickActions.map((action, index) => (
+          {/* Today's Performance */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/50">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Today's Orders</h3>
+                <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                  <i className="ri-calendar-line text-blue-600"></i>
+                </div>
+              </div>
+              <p className="text-3xl font-bold text-gray-900 mb-2">{stats.todayOrders}</p>
+              <p className="text-sm text-gray-600">
+                <span className="text-green-600 font-medium">
+                  <i className="ri-arrow-up-line"></i> +15%
+                </span> vs yesterday
+              </p>
+            </div>
+
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/50">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Today's Sales</h3>
+                <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
+                  <i className="ri-line-chart-line text-emerald-600"></i>
+                </div>
+              </div>
+              <p className="text-3xl font-bold text-gray-900 mb-2">{formatPesoSimple(stats.todaySales)}</p>
+              <p className="text-sm text-gray-600">
+                <span className="text-green-600 font-medium">
+                  <i className="ri-arrow-up-line"></i> +22%
+                </span> vs yesterday
+              </p>
+            </div>
+
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/50">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Completed Orders</h3>
+                <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                  <i className="ri-check-line text-green-600"></i>
+                </div>
+              </div>
+              <p className="text-3xl font-bold text-gray-900 mb-2">{stats.completedOrders}</p>
+              <p className="text-sm text-gray-600">
+                <span className="text-green-600 font-medium">
+                  <i className="ri-check-line"></i> Excellent
+                </span> completion rate
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Enhanced Quick Actions */}
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50">
+              <div className="p-6 border-b border-gray-100">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center">
+                  <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg flex items-center justify-center mr-3">
+                    <i className="ri-flashlight-line text-white text-sm"></i>
+                  </div>
+                  Quick Actions
+                </h2>
+                <p className="text-gray-600 text-sm mt-1">Manage your restaurant efficiently</p>
+              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    {
+                      title: 'View Orders',
+                      description: 'Manage customer orders',
+                      icon: 'ri-shopping-bag-line',
+                      color: 'bg-gradient-to-br from-blue-500 to-blue-600',
+                      path: '/admin/orders'
+                    },
+                    {
+                      title: 'Add Menu Item',
+                      description: 'Create new dishes',
+                      icon: 'ri-add-line',
+                      color: 'bg-gradient-to-br from-emerald-500 to-emerald-600',
+                      path: '/admin/menu'
+                    },
+                    {
+                      title: 'View Reports',
+                      description: 'Analytics & insights',
+                      icon: 'ri-bar-chart-line',
+                      color: 'bg-gradient-to-br from-purple-500 to-purple-600',
+                      path: '/admin/reports'
+                    },
+                    {
+                      title: 'Manage Categories',
+                      description: 'Organize menu items',
+                      icon: 'ri-folder-line',
+                      color: 'bg-gradient-to-br from-amber-500 to-orange-600',
+                      path: '/admin/categories'
+                    }
+                  ].map((action, index) => (
                     <button
                       key={index}
                       onClick={() => navigate(action.path)}
-                      className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 text-left transition-colors"
+                      className="group p-4 border border-gray-200/50 rounded-xl hover:bg-gray-50/50 text-left transition-all duration-200 hover:scale-105 hover:shadow-lg"
                     >
-                      <div className={`w-10 h-10 ${action.color} rounded-lg flex items-center justify-center mb-3`}>
-                        <i className={`${action.icon} text-white`}></i>
+                      <div className={`w-12 h-12 ${action.color} rounded-xl flex items-center justify-center mb-3 shadow-lg group-hover:shadow-xl transition-all duration-200`}>
+                        <i className={`${action.icon} text-white text-lg`}></i>
                       </div>
-                      <h3 className="font-semibold text-gray-900 mb-1">{action.title}</h3>
-                      <p className="text-sm text-gray-600">{action.description}</p>
+                      <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-gray-800">{action.title}</h3>
+                      <p className="text-sm text-gray-600 group-hover:text-gray-700">{action.description}</p>
                     </button>
                   ))}
                 </div>
               </div>
+            </div>
 
-              {/* Recent Orders */}
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-gray-900">Recent Orders</h2>
+            {/* Enhanced Recent Orders */}
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50">
+              <div className="p-6 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900 flex items-center">
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mr-3">
+                        <i className="ri-time-line text-white text-sm"></i>
+                      </div>
+                      Recent Orders
+                    </h2>
+                    <p className="text-gray-600 text-sm mt-1">Latest customer orders</p>
+                  </div>
                   <Button
                     onClick={() => navigate('/admin/orders')}
-                    variant="outline"
-                    className="text-sm px-4 py-2 whitespace-nowrap"
+                    className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white px-4 py-2 text-sm rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
                   >
                     View All
                   </Button>
                 </div>
-                
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Order ID</th>
-                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Customer</th>
-                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
-                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Total</th>
-                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Time</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {recentOrders.length > 0 ? (
-                        recentOrders.map((order) => (
-                          <tr key={order.id} className="border-b border-gray-100">
-                            <td className="py-3 px-4">#{order.id.slice(-4)}</td>
-                            <td className="py-3 px-4">{order.customer_name}</td>
-                            <td className="py-3 px-4">
-                              <span className={`px-2 py-1 text-xs rounded-full capitalize ${getStatusColor(order.status)}`}>
-                                {order.status}
-                              </span>
-                            </td>
-                            <td className="py-3 px-4">{formatPesoSimple(parseFloat(order.total_amount))}</td>
-                            <td className="py-3 px-4">{getTimeAgo(order.created_at)}</td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={5} className="py-8 text-center text-gray-500">
-                            No orders found
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
               </div>
-            </div>
-
-            {/* Notifications Panel */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Recent Activity</h2>
-              <div className="space-y-4">
-                {notifications.slice(0, 5).map((notification) => (
-                  <div
-                    key={notification.id}
-                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                      notification.unread
-                        ? 'bg-orange-50 border-orange-200'
-                        : 'bg-gray-50 border-gray-200'
-                    }`}
-                    onClick={() => markNotificationRead(notification.id)}
-                  >
-                    <div className="flex items-start">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
-                        notification.type === 'new_order' ? 'bg-green-100' : 'bg-blue-100'
-                      }`}>
-                        <i className={`${
-                          notification.type === 'new_order' ? 'ri-shopping-bag-line text-green-600' : 'ri-refresh-line text-blue-600'
-                        } text-sm`}></i>
+              
+              <div className="p-6">
+                {recentOrders.length > 0 ? (
+                  <div className="space-y-4">
+                    {recentOrders.slice(0, 5).map((order) => (
+                      <div key={order.id} className="flex items-center justify-between p-4 bg-gray-50/50 rounded-xl border border-gray-100/50 hover:bg-gray-100/50 transition-colors">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                            #{order.id.slice(-3)}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900">{order.customer_name}</p>
+                            <p className="text-sm text-gray-600">{formatPesoSimple(order.total_amount)}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
+                            {order.status}
+                          </span>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {new Date(order.created_at).toLocaleTimeString()}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">{notification.message}</p>
-                        <p className="text-xs text-gray-600">{notification.time}</p>
-                      </div>
-                      {notification.unread && (
-                        <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                      )}
-                    </div>
+                    ))}
                   </div>
-                ))}
-                {notifications.length === 0 && (
-                  <div className="text-center text-gray-500 py-8">
-                    <i className="ri-notification-off-line text-2xl mb-2"></i>
-                    <p className="text-sm">No recent activity</p>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <i className="ri-shopping-bag-line text-4xl mb-4 text-gray-300"></i>
+                    <p className="font-medium">No recent orders</p>
+                    <p className="text-sm">Orders will appear here when customers place them</p>
                   </div>
                 )}
               </div>
