@@ -104,6 +104,7 @@ export default function AdminSizes() {
 
       resetForm();
       setShowForm(false);
+      window.location.reload();
     } catch (err) {
       console.error('Error saving size:', err);
     } finally {
@@ -127,6 +128,7 @@ export default function AdminSizes() {
     if (window.confirm(`Are you sure you want to delete the "${size.name}" size? This action cannot be undone.`)) {
       try {
         await deleteSizeOption(size.id);
+        window.location.reload();
       } catch (err) {
         console.error('Error deleting size:', err);
       }

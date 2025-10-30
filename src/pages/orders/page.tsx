@@ -3,13 +3,16 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrders } from '../../hooks/useOrders';
+import { useBanStatus } from '../../hooks/useBanStatus';
 import { formatPesoSimple } from '../../lib/currency';
 import Button from '../../components/base/Button';
+import BannedUserWarning from '../../components/feature/BannedUserWarning';
 
 const Orders = () => {
   const navigate = useNavigate();
-  const { user, isLoading } = useAuth();
+  const { user, logout, isLoading } = useAuth();
   const { fetchUserOrders } = useOrders();
+  const banStatus = useBanStatus();
   const [orders, setOrders] = useState<any[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
 
@@ -64,8 +67,8 @@ const Orders = () => {
     ).join(' ');
   };
 
-  // Show loading spinner while checking auth
-  if (isLoading || ordersLoading) {
+  // Show loading spinner while checking auth or ban status
+  if (isLoading || banStatus.isLoading || ordersLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -73,6 +76,19 @@ const Orders = () => {
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>
+    );
+  }
+
+  // Show banned user warning if user is banned
+  if (banStatus.isBanned) {
+    return (
+      <BannedUserWarning
+        banReason={banStatus.banReason!}
+        customReason={banStatus.customReason}
+        bannedUntil={banStatus.bannedUntil}
+        banMessage={banStatus.banMessage}
+        onLogout={logout}
+      />
     );
   }
 

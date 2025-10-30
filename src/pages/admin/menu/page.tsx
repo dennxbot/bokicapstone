@@ -136,7 +136,9 @@ const AdminMenu = () => {
     });
   };
 
-  const handleAddItem = async () => {
+  const handleAddItem = async (e: React.FormEvent) => {
+    e.preventDefault(); // Prevent default form submission
+    
     if (!newItem.name || !newItem.price || !newItem.category_id) {
       alert('Please fill in all required fields');
       return;
@@ -185,6 +187,9 @@ const AdminMenu = () => {
       });
       setSelectedSizes([]);
       setIsAddingItem(false);
+      
+      // Refresh the page to ensure changes are applied
+      window.location.reload();
     } catch (error) {
       console.error('Error adding menu item:', error);
       alert('Error adding menu item. Please try again.');
@@ -214,7 +219,9 @@ const AdminMenu = () => {
     }
   };
 
-  const handleUpdateItem = async () => {
+  const handleUpdateItem = async (e: React.FormEvent) => {
+    e.preventDefault(); // Prevent default form submission
+    
     if (!editingItem || !newItem.name || !newItem.price || !newItem.category_id) {
       alert('Please fill in all required fields');
       return;
@@ -261,6 +268,9 @@ const AdminMenu = () => {
         is_available: true,
         is_featured: false
       });
+      
+      // Refresh the page to ensure changes are applied
+      window.location.reload();
     } catch (error) {
       console.error('Error updating menu item:', error);
       alert('Error updating menu item. Please try again.');
@@ -281,6 +291,9 @@ const AdminMenu = () => {
       if (error) throw error;
 
       setMenuItems(menuItems.filter(item => item.id !== id));
+      
+      // Refresh the page to ensure changes are applied
+      window.location.reload();
     } catch (error) {
       console.error('Error deleting menu item:', error);
       alert('Error deleting menu item. Please try again.');
@@ -312,6 +325,9 @@ const AdminMenu = () => {
       ));
       
       console.log('Local state updated');
+      
+      // Refresh the page to ensure changes are applied
+      window.location.reload();
     } catch (error) {
       console.error('Error updating availability:', error);
       alert('Error updating availability. Please try again.');
@@ -333,6 +349,9 @@ const AdminMenu = () => {
       setMenuItems(menuItems.map(item => 
         item.id === id ? { ...item, is_featured: !currentFeatured } : item
       ));
+      
+      // Refresh the page to ensure changes are applied
+      window.location.reload();
     } catch (error) {
       console.error('Error updating featured status:', error);
       alert('Error updating featured status. Please try again.');

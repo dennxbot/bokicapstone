@@ -4,15 +4,18 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../hooks/useCart';
 import { useAuth } from '../../hooks/useAuth';
 import { useAddresses } from '../../hooks/useAddresses';
+import { useBanStatus } from '../../hooks/useBanStatus';
 import { formatPesoSimple } from '../../lib/currency';
 import Button from '../../components/base/Button';
 import Input from '../../components/base/Input';
+import BannedUserWarning from '../../components/feature/BannedUserWarning';
 
 const Checkout = () => {
   const navigate = useNavigate();
   const { items: cartItems, getTotalPrice, createOrder } = useCart();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { addresses, loadAddresses, getDefaultAddress } = useAddresses();
+  const banStatus = useBanStatus();
   const [formData, setFormData] = useState({
     fullName: '',
     contactNumber: '',
@@ -93,6 +96,19 @@ const Checkout = () => {
       setIsSubmitting(false);
     }
   };
+
+  // Show banned user warning if user is banned
+  if (banStatus.isBanned) {
+    return (
+      <BannedUserWarning
+        banReason={banStatus.banReason!}
+        customReason={banStatus.customReason}
+        bannedUntil={banStatus.bannedUntil}
+        banMessage={banStatus.banMessage}
+        onLogout={logout}
+      />
+    );
+  }
 
   if (cartItems.length === 0) {
     return (

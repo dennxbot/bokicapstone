@@ -119,6 +119,7 @@ const AdminCategories = () => {
         is_active: true
       });
       setIsAddingCategory(false);
+      window.location.reload();
     } catch (error) {
       console.error('Error adding category:', error);
       alert('Error adding category. Please try again.');
@@ -173,6 +174,7 @@ const AdminCategories = () => {
         image_url: '',
         is_active: true
       });
+      window.location.reload();
     } catch (error) {
       console.error('Error updating category:', error);
       alert('Error updating category. Please try again.');
@@ -198,6 +200,7 @@ const AdminCategories = () => {
       if (error) throw error;
 
       setCategories(categories.filter(category => category.id !== categoryId));
+      window.location.reload();
     } catch (error) {
       console.error('Error deleting category:', error);
       alert('Error deleting category. Please try again.');
@@ -221,6 +224,7 @@ const AdminCategories = () => {
           ? { ...category, is_active: !currentStatus }
           : category
       ));
+      window.location.reload();
     } catch (error) {
       console.error('Error updating category status:', error);
       alert('Error updating category status. Please try again.');

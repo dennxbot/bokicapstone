@@ -3,16 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../hooks/useCart';
 import { formatPesoSimple } from '../../lib/currency';
 import { useAuth } from '../../hooks/useAuth';
+import { useBanStatus } from '../../hooks/useBanStatus';
 import Button from '../../components/base/Button';
 import BottomNavigation from '../../components/feature/BottomNavigation';
+import BannedUserWarning from '../../components/feature/BannedUserWarning';
 
 export default function Cart() {
   const navigate = useNavigate();
   const { items: cartItems, updateQuantity, removeFromCart, getTotalPrice } = useCart();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const banStatus = useBanStatus();
 
   // Add loading state check
-  if (!cartItems) {
+  if (!cartItems || banStatus.isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 flex items-center justify-center pb-20 lg:pb-8">
         <div className="text-center">
@@ -20,6 +23,19 @@ export default function Cart() {
           <p className="text-gray-600">Loading your cart...</p>
         </div>
       </div>
+    );
+  }
+
+  // Show banned user warning if user is banned
+  if (banStatus.isBanned) {
+    return (
+      <BannedUserWarning
+        banReason={banStatus.banReason!}
+        customReason={banStatus.customReason}
+        bannedUntil={banStatus.bannedUntil}
+        banMessage={banStatus.banMessage}
+        onLogout={logout}
+      />
     );
   }
 

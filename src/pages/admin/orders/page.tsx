@@ -137,9 +137,9 @@ const AdminOrders = () => {
       case 'pending':
         return 'preparing';
       case 'preparing':
-        return orderType === 'delivery' ? 'out_for_delivery' : 'ready';
+        return 'ready'; // All orders go to 'ready' first
       case 'ready':
-        return 'completed';
+        return orderType === 'delivery' ? 'out_for_delivery' : 'completed';
       case 'out_for_delivery':
         return 'completed';
       default:
@@ -152,9 +152,9 @@ const AdminOrders = () => {
       case 'pending':
         return 'Start Preparing';
       case 'preparing':
-        return orderType === 'delivery' ? 'Out for Delivery' : 'Ready for Pickup';
+        return 'Mark as Ready'; // All orders go to 'ready' first
       case 'ready':
-        return 'Mark Completed';
+        return orderType === 'delivery' ? 'Out for Delivery' : 'Mark Completed';
       case 'out_for_delivery':
         return 'Mark Delivered';
       default:
@@ -211,6 +211,10 @@ const AdminOrders = () => {
                   <div className="text-2xl font-bold text-blue-600">{orders.filter(o => o.status === 'preparing').length}</div>
                   <div className="text-xs text-gray-600 font-medium">Preparing</div>
                 </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-red-600">{orders.filter(o => o.status === 'cancelled').length}</div>
+                  <div className="text-xs text-gray-600 font-medium">Cancelled</div>
+                </div>
               </div>
             </div>
           </div>
@@ -238,7 +242,8 @@ const AdminOrders = () => {
                 { key: 'preparing', label: 'Preparing', icon: 'ri-restaurant-line', count: orders.filter(o => o.status === 'preparing').length },
                 { key: 'ready', label: 'Ready', icon: 'ri-check-line', count: orders.filter(o => o.status === 'ready').length },
                 { key: 'out_for_delivery', label: 'Out for Delivery', icon: 'ri-truck-line', count: orders.filter(o => o.status === 'out_for_delivery').length },
-                { key: 'completed', label: 'Completed', icon: 'ri-check-double-line', count: orders.filter(o => o.status === 'completed').length }
+                { key: 'completed', label: 'Completed', icon: 'ri-check-double-line', count: orders.filter(o => o.status === 'completed').length },
+                { key: 'cancelled', label: 'Cancelled', icon: 'ri-close-circle-line', count: orders.filter(o => o.status === 'cancelled').length }
               ].map((tab) => (
                 <button
                   key={tab.key}
