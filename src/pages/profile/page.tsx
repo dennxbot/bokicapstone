@@ -2,13 +2,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { useBanStatus } from '../../hooks/useBanStatus';
 import Button from '../../components/base/Button';
 import Input from '../../components/base/Input';
 import AddressManager from '../../components/feature/AddressManager';
+import BannedUserWarning from '../../components/feature/BannedUserWarning';
 
 const Profile = () => {
   const navigate = useNavigate();
   const { user, logout, updateProfile } = useAuth();
+  const banStatus = useBanStatus();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
@@ -63,6 +66,19 @@ const Profile = () => {
   if (!user) {
     navigate('/login');
     return null;
+  }
+
+  // Show banned user warning if user is banned
+  if (banStatus.isBanned) {
+    return (
+      <BannedUserWarning
+        banReason={banStatus.banReason!}
+        customReason={banStatus.customReason}
+        bannedUntil={banStatus.bannedUntil}
+        banMessage={banStatus.banMessage}
+        onLogout={logout}
+      />
+    );
   }
 
   return (

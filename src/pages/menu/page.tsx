@@ -4,16 +4,19 @@ import { useNavigate } from 'react-router-dom';
 import { useFoodItems } from '../../hooks/useFoodItems';
 import { useCart } from '../../hooks/useCart';
 import { useAuth } from '../../hooks/useAuth';
+import { useBanStatus } from '../../hooks/useBanStatus';
 import FoodCard from '../../components/feature/FoodCard';
 import BottomNavigation from '../../components/feature/BottomNavigation';
 import FloatingCartButton from '../../components/feature/FloatingCartButton';
+import BannedUserWarning from '../../components/feature/BannedUserWarning';
 import Button from '../../components/base/Button';
 import Input from '../../components/base/Input';
 
 export default function Menu() {
   const navigate = useNavigate();
   const { addToCart } = useCart();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const banStatus = useBanStatus();
   const { categories, isLoading, searchFoodItems, refetch } = useFoodItems();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -59,6 +62,19 @@ export default function Menu() {
   const handleRefresh = () => {
     refetch();
   };
+
+  // Show banned user warning if user is banned
+  if (banStatus.isBanned) {
+    return (
+      <BannedUserWarning
+        banReason={banStatus.banReason!}
+        customReason={banStatus.customReason}
+        bannedUntil={banStatus.bannedUntil}
+        banMessage={banStatus.banMessage}
+        onLogout={logout}
+      />
+    );
+  }
 
   if (isLoading) {
     return (
