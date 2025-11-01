@@ -14,6 +14,7 @@ const Orders = lazy(() => import('../pages/orders/page'));
 const OrderDetails = lazy(() => import('../pages/order-details/page'));
 const OrderConfirmation = lazy(() => import('../pages/order-confirmation/page'));
 const Profile = lazy(() => import('../pages/profile/page'));
+const Favorites = lazy(() => import('../pages/favorites/page'));
 const NotFound = lazy(() => import('../pages/NotFound'));
 
 // Admin pages
@@ -78,6 +79,10 @@ const routes: RouteObject[] = [
   {
     path: '/profile',
     element: <Profile />,
+  },
+  {
+    path: '/favorites',
+    element: <Favorites />,
   },
   {
     path: '/admin',

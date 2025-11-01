@@ -1,596 +1,428 @@
-
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { useAuth } from './useAuth';
-import type { FoodItem, CartItem } from '../types';
+import type { CartItemWithSize, FoodItem, SizeWithPrice } from '../types';
 
-export const useCart = () => {
-  const [items, setItems] = useState<CartItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const { user } = useAuth();
-
-  // Load cart when user changes
-  useEffect(() => {
-    if (user?.id) {
-      console.log('🔍 Loading cart for new user:', user.id);
-      loadCartFromDatabase();
-    } else {
-      console.log('📱 Loading cart from localStorage (no user)');
-      loadCartFromLocalStorage();
+// Helper function to get current user ID
+const getCurrentUserId = (): string | null => {
+  try {
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      return user.id;
     }
-  }, [user?.id]);
+  } catch (error) {
+    console.error('Error getting current user:', error);
+  }
+  return null;
+};
 
-  const loadCartFromLocalStorage = () => {
-    try {
-      const savedCart = localStorage.getItem('cart');
-      if (savedCart) {
-        const parsedCart = JSON.parse(savedCart);
-        console.log('📱 Loaded from localStorage:', parsedCart);
-        setItems(parsedCart);
-      } else {
-        console.log('📱 No localStorage cart found');
-        setItems([]);
-      }
-    } catch (error) {
-      console.error('❌ Error loading from localStorage:', error);
-      setItems([]);
-    }
-  };
+interface CartStore {
+  items: CartItemWithSize[];
+  isOpen: boolean;
+  lastAddedItem: CartItemWithSize | null;
+  
+  // Actions
+  addItem: (foodItem: FoodItem, selectedSize?: SizeWithPrice, quantity?: number) => void;
+  addToCart: (foodItem: FoodItem, selectedSize?: SizeWithPrice, quantity?: number) => void;
+  removeItem: (itemId: string, sizeId?: string) => void;
+  updateQuantity: (itemId: string, quantity: number, sizeId?: string) => void;
+  clearCart: () => void;
+  toggleCart: () => void;
+  setCartOpen: (isOpen: boolean) => void;
+  createOrder: (orderData?: any) => Promise<void>;
+  
+  // Database sync functions
+  saveCartToDatabase: (userId: string) => Promise<void>;
+  loadCartFromDatabase: (userId: string) => Promise<void>;
+  clearCartFromDatabase: (userId: string) => Promise<void>;
+  syncCartWithDatabase: (userId: string) => Promise<void>;
+  
+  // Computed values
+  getTotalItems: () => number;
+  getTotalPrice: () => number;
+  getItemQuantity: (itemId: string, sizeId?: string) => number;
+}
 
-  const loadCartFromDatabase = async () => {
-    if (!user?.id) {
-      console.log('❌ No user ID for database load');
-      return;
-    }
+export const useCart = create<CartStore>()(
+  persist(
+    (set, get) => ({
+      items: [],
+      isOpen: false,
+      lastAddedItem: null,
 
-    setIsLoading(true);
-    try {
-      console.log('🔍 Querying database for user:', user.id);
-      
-      // 🔍 LOAD CART DEBUG
-      console.log('📥 Loading cart from database for user:', user.id);
-      
-      const { data: cartData, error } = await supabase
-        .from('cart_items')
-        .select(`
-          quantity,
-          size_option_id,
-          size_name,
-          size_multiplier,
-          food_items (
-            id,
-            name,
-            price,
-            image_url,
-            category_id,
-            description,
-            is_featured,
-            is_available,
-            preparation_time
-          )
-        `)
-        .eq('user_id', user.id);
+      addItem: (foodItem: FoodItem, selectedSize?: SizeWithPrice, quantity = 1) => {
+        set((state) => {
+          const existingItemIndex = state.items.findIndex(
+            (item) => 
+              item.id === foodItem.id && 
+              item.selected_size?.id === selectedSize?.id
+          );
 
-      if (error) {
-        console.error('❌ Database query error:', error);
-        loadCartFromLocalStorage();
-        return;
-      }
+          let newItems: CartItemWithSize[];
+          let addedItem: CartItemWithSize;
 
-      console.log('📊 Raw database result:', cartData);
+          if (existingItemIndex >= 0) {
+            // Update existing item quantity
+            newItems = [...state.items];
+            newItems[existingItemIndex] = {
+              ...newItems[existingItemIndex],
+              quantity: newItems[existingItemIndex].quantity + quantity,
+            };
+            addedItem = newItems[existingItemIndex];
+          } else {
+            // Add new item - use the price from foodItem directly since it's already calculated in food-details page
+            const basePrice = foodItem.price;
 
-      if (!cartData || cartData.length === 0) {
-        console.log('✅ Empty cart for user - checking localStorage for migration');
-        // Check if there's a localStorage cart to migrate
-        const savedCart = localStorage.getItem('cart');
-        if (savedCart) {
-          const parsedCart = JSON.parse(savedCart);
-          if (parsedCart.length > 0) {
-            console.log('🔄 Migrating localStorage cart to database:', parsedCart);
-            await migrateCartToDatabase(parsedCart);
-            return;
+            addedItem = {
+              ...foodItem,
+              quantity,
+              selected_size: selectedSize ? {
+                id: selectedSize.id,
+                name: selectedSize.name,
+                price_multiplier: selectedSize.price_multiplier,
+              } : undefined,
+              price: basePrice,
+            };
+
+            newItems = [...state.items, addedItem];
           }
-        }
-        console.log('✅ Setting empty cart for user');
-        setItems([]);
-        return;
-      }
 
-      // Process cart data - NOW USING SIZE COLUMNS FROM DATABASE
-      const processedItems: CartItem[] = cartData
-        .filter(item => item.food_items) // Filter out items with null food_items
-        .map(item => {
-          const foodItem = Array.isArray(item.food_items) ? item.food_items[0] : item.food_items;
-          
-          // Calculate price with size multiplier if available
-          const basePrice = foodItem.price;
-          const sizeMultiplier = item.size_multiplier || 1;
-          const finalPrice = basePrice * sizeMultiplier;
-          
-          // 🔍 DEBUG: Log each item being processed
-          console.log('🔄 Processing cart item:', {
-            foodItemName: foodItem.name,
-            basePrice: basePrice,
-            sizeMultiplier: sizeMultiplier,
-            finalPrice: finalPrice,
-            sizeName: item.size_name || 'Regular',
-            quantity: item.quantity
-          });
-          
           return {
-            id: foodItem.id,
-            name: foodItem.name,
-            description: foodItem.description || '',
-            // Use calculated price with size multiplier
-            price: finalPrice,
-            image: foodItem.image_url || '',
-            category: foodItem.category_id || '',
-            featured: foodItem.is_featured || false,
-            available: foodItem.is_available || true,
-            quantity: item.quantity,
-            // Now using size information from database
-            size_option_id: item.size_option_id || undefined,
-            size_name: item.size_name || undefined,
-            size_multiplier: item.size_multiplier || undefined
+            items: newItems,
+            lastAddedItem: addedItem,
           };
         });
 
-      console.log('✅ Processed cart items for user:', processedItems);
-      console.log('💰 Price verification:', processedItems.map(item => ({
-        name: item.name,
-        price: item.price,
-        note: 'Using original price - size info not available'
-      })));
-      setItems(processedItems);
+        // Sync with database if user is logged in
+        const userId = getCurrentUserId();
+        if (userId) {
+          // Use setTimeout to avoid blocking the UI
+          setTimeout(() => {
+            get().saveCartToDatabase(userId).catch(console.error);
+          }, 0);
+        }
+      },
 
-    } catch (error) {
-      console.error('❌ Error loading cart from database:', error);
-      loadCartFromLocalStorage();
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      // Alias for addItem to match usage in other components
+      addToCart: (foodItem: FoodItem, selectedSize?: SizeWithPrice, quantity = 1) => {
+        get().addItem(foodItem, selectedSize, quantity);
+      },
 
-  const migrateCartToDatabase = async (localCart: CartItem[]) => {
-    if (!user?.id || localCart.length === 0) return;
-
-    try {
-      console.log('🔄 Starting cart migration to database');
-      
-      // Clear any existing cart items for this user first
-      await supabase
-        .from('cart_items')
-        .delete()
-        .eq('user_id', user.id);
-
-      // Insert new cart items
-      const cartItemsToInsert = localCart.map(item => ({
-        user_id: user.id,
-        food_item_id: item.id,
-        quantity: item.quantity
-      }));
-
-      const { error } = await supabase
-        .from('cart_items')
-        .insert(cartItemsToInsert);
-
-      if (error) {
-        console.error('❌ Migration error:', error);
-        return;
-      }
-
-      console.log('✅ Cart migrated successfully');
-      setItems(localCart);
-      
-      // Clear localStorage after successful migration
-      localStorage.removeItem('cart');
-      
-    } catch (error) {
-      console.error('❌ Migration failed:', error);
-    }
-  };
-
-  const saveCartToDatabase = async (cartItems: CartItem[]) => {
-    if (!user?.id) {
-      console.log('📱 Saving to localStorage (no user)');
-      localStorage.setItem('cart', JSON.stringify(cartItems));
-      return;
-    }
-
-    try {
-      console.log('💾 SAVING CART TO DATABASE - Debug Info:');
-      console.log('🛒 Cart Items to Save:', cartItems.map(item => ({
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        size_option_id: item.size_option_id,
-        size_name: item.size_name,
-        size_multiplier: item.size_multiplier
-      })));
-
-      // Clear existing cart items for this user
-      const { error: deleteError } = await supabase
-        .from('cart_items')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (deleteError) {
-        console.error('❌ Error clearing existing cart:', deleteError);
-        localStorage.setItem('cart', JSON.stringify(cartItems));
-        return;
-      }
-
-      if (cartItems.length > 0) {
-        // Insert new cart items - NOW INCLUDING SIZE COLUMNS
-        const cartItemsToInsert = cartItems.map(item => ({
-          user_id: user.id,
-          food_item_id: item.id,
-          quantity: item.quantity,
-          size_option_id: item.size_option_id || null,
-          size_name: item.size_name || null,
-          size_multiplier: item.size_multiplier || 1
+      removeItem: (itemId: string, sizeId?: string) => {
+        set((state) => ({
+          items: state.items.filter(
+            (item) => !(item.id === itemId && item.selected_size?.id === sizeId)
+          ),
         }));
 
-        console.log('📤 Database Insert Data (with size columns):', cartItemsToInsert);
+        // Sync with database if user is logged in
+        const userId = getCurrentUserId();
+        if (userId) {
+          setTimeout(() => {
+            get().saveCartToDatabase(userId).catch(console.error);
+          }, 0);
+        }
+      },
 
-        const { error } = await supabase
-          .from('cart_items')
-          .insert(cartItemsToInsert);
-
-        if (error) {
-          console.error('❌ Error inserting cart items:', error);
-          localStorage.setItem('cart', JSON.stringify(cartItems));
+      updateQuantity: (itemId: string, quantity: number, sizeId?: string) => {
+        if (quantity <= 0) {
+          get().removeItem(itemId, sizeId);
           return;
         }
-      }
 
-      console.log('✅ Cart saved to database successfully (with size columns)');
-      
-    } catch (error) {
-      console.error('❌ Error saving to database:', error);
-      localStorage.setItem('cart', JSON.stringify(cartItems));
-    }
-  };
+        set((state) => ({
+          items: state.items.map((item) =>
+            item.id === itemId && item.selected_size?.id === sizeId
+              ? { ...item, quantity }
+              : item
+          ),
+        }));
 
-  const addToCart = async (item: FoodItem | CartItem, quantity: number = 1) => {
-    // 🛒 COMPREHENSIVE CART DEBUG LOGGING
-    console.log('='.repeat(60));
-    console.log('🛒 CART HOOK DEBUG - Adding Item to Cart');
-    console.log('='.repeat(60));
-    console.log('📦 Received Item:', {
-      name: item.name,
-      id: item.id,
-      price: item.price,
-      quantity: quantity
-    });
-    console.log('🔍 Full Item Data:', item);
-    console.log('🏷️ Size Information:', {
-      size_option_id: 'size_option_id' in item ? item.size_option_id : 'NOT_PROVIDED',
-      size_name: 'size_name' in item ? item.size_name : 'NOT_PROVIDED',
-      size_multiplier: 'size_multiplier' in item ? item.size_multiplier : 'NOT_PROVIDED'
-    });
-    
-    // Check if item already exists in cart with same size
-    const existingItemIndex = items.findIndex(cartItem => {
-      // For items with size information, match both id and size_option_id
-      if ('size_option_id' in item && item.size_option_id) {
-        return cartItem.id === item.id && cartItem.size_option_id === item.size_option_id;
-      }
-      // For items without size information, just match id
-      return cartItem.id === item.id;
-    });
-    
-    console.log('🔎 Existing Item Check:', {
-      existingItemIndex,
-      foundExisting: existingItemIndex !== -1,
-      currentCartItems: items.length
-    });
-    
-    let newItems: CartItem[];
-    
-    if (existingItemIndex !== -1) {
-      // Update existing item quantity
-      newItems = items.map((cartItem, index) =>
-        index === existingItemIndex
-          ? { ...cartItem, quantity: cartItem.quantity + quantity }
-          : cartItem
-      );
-      console.log('📈 UPDATED EXISTING ITEM - New quantity:', newItems[existingItemIndex].quantity);
-    } else {
-      // Add new item to cart, preserving all properties including size info and calculated price
-      const cartItem: CartItem = {
-        id: item.id,
-        name: item.name,
-        description: item.description,
-        price: item.price, // This will be the calculated price from size selection
-        image: 'image' in item ? item.image : (item as any).image_url || '',
-        category: 'category' in item ? item.category : (item as any).category_id || '',
-        featured: 'featured' in item ? item.featured : (item as any).is_featured || false,
-        available: 'available' in item ? item.available : (item as any).is_available || true,
-        quantity,
-        // Preserve size information if present
-        size_option_id: 'size_option_id' in item ? item.size_option_id : undefined,
-        size_name: 'size_name' in item ? item.size_name : undefined,
-        size_multiplier: 'size_multiplier' in item ? item.size_multiplier : undefined,
-      };
-      
-      console.log('➕ CREATING NEW CART ITEM:');
-      console.log('📋 Final Cart Item Object:', cartItem);
-      console.log('💰 Final Price in Cart Item:', cartItem.price);
-      console.log('🏷️ Final Size Info:', {
-        size_option_id: cartItem.size_option_id,
-        size_name: cartItem.size_name,
-        size_multiplier: cartItem.size_multiplier
-      });
-      
-      newItems = [...items, cartItem];
-    }
-    
-    console.log('📊 NEW CART STATE:');
-    console.log('🛒 Total Items:', newItems.length);
-    console.log('📝 All Cart Items:', newItems.map(item => ({
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity,
-      size_name: item.size_name,
-      size_option_id: item.size_option_id
-    })));
-    console.log('='.repeat(60));
-    
-    // Update state immediately
-    setItems(newItems);
-    
-    // Save to database/localStorage
-    await saveCartToDatabase(newItems);
-  };
-
-  const removeFromCart = async (itemId: string, sizeOptionId?: string) => {
-    console.log('🗑️ Removing from cart:', itemId, 'size:', sizeOptionId);
-    
-    // Update state immediately - filter by both id and size_option_id if provided
-    const newItems = items.filter(item => {
-      if (sizeOptionId) {
-        return !(item.id === itemId && item.size_option_id === sizeOptionId);
-      }
-      return item.id !== itemId;
-    });
-    setItems(newItems);
-    
-    console.log('✅ Cart after removal:', newItems);
-    
-    // Remove from database immediately if user is logged in
-    if (user?.id) {
-      try {
-        console.log('🗑️ Deleting from database:', itemId);
-        const { error } = await supabase
-          .from('cart_items')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('food_item_id', itemId);
-
-        if (error) {
-          console.error('❌ Error deleting from database:', error);
-          // If database deletion fails, still keep the local state updated
-          // but save the new state to ensure consistency
-          await saveCartToDatabase(newItems);
-        } else {
-          console.log('✅ Successfully deleted from database');
+        // Sync with database if user is logged in
+        const userId = getCurrentUserId();
+        if (userId) {
+          setTimeout(() => {
+            get().saveCartToDatabase(userId).catch(console.error);
+          }, 0);
         }
-      } catch (error) {
-        console.error('❌ Database deletion error:', error);
-        // Fallback to full cart save
-        await saveCartToDatabase(newItems);
-      }
-    } else {
-      // Save to localStorage for non-logged-in users
-      localStorage.setItem('cart', JSON.stringify(newItems));
-    }
-  };
+      },
 
-  const updateQuantity = async (itemId: string, quantity: number, sizeOptionId?: string) => {
-    console.log('🔄 Updating quantity for:', itemId, 'to:', quantity, 'size:', sizeOptionId);
-    
-    if (quantity <= 0) {
-      await removeFromCart(itemId, sizeOptionId);
-      return;
-    }
+      clearCart: () => {
+        set({ items: [], lastAddedItem: null });
 
-    const newItems = items.map(item => {
-      if (sizeOptionId) {
-        return (item.id === itemId && item.size_option_id === sizeOptionId) 
-          ? { ...item, quantity } 
-          : item;
-      }
-      return item.id === itemId ? { ...item, quantity } : item;
-    });
-    
-    console.log('✅ Cart after quantity update:', newItems);
-    
-    // Update state immediately
-    setItems(newItems);
-    
-    // Save to database/localStorage
-    await saveCartToDatabase(newItems);
-  };
-
-  const clearCart = async () => {
-    console.log('🧹 Clearing cart');
-    
-    // Update state immediately
-    setItems([]);
-    
-    if (user?.id) {
-      try {
-        const { error } = await supabase
-          .from('cart_items')
-          .delete()
-          .eq('user_id', user.id);
-          
-        if (error) {
-          console.error('❌ Error clearing cart from database:', error);
-        } else {
-          console.log('✅ Cart cleared from database');
+        // Clear from database if user is logged in
+        const userId = getCurrentUserId();
+        if (userId) {
+          setTimeout(() => {
+            get().clearCartFromDatabase(userId).catch(console.error);
+          }, 0);
         }
-      } catch (error) {
-        console.error('❌ Error clearing cart from database:', error);
-      }
-    } else {
-      localStorage.removeItem('cart');
-      console.log('✅ Cart cleared from localStorage');
-    }
-  };
+      },
 
-  const getTotalPrice = () => {
-    return items.reduce((total, item) => total + (item.price * item.quantity), 0);
-  };
+      toggleCart: () => {
+        set((state) => ({ isOpen: !state.isOpen }));
+      },
 
-  const getTotalItems = () => {
-    return items.reduce((total, item) => total + item.quantity, 0);
-  };
+      setCartOpen: (isOpen: boolean) => {
+        set({ isOpen });
+      },
 
-  const createOrder = async (orderData: {
-    customerName: string;
-    customerEmail: string;
-    customerPhone: string;
-    customerAddress: string;
-    orderType: 'delivery' | 'pickup';
-    paymentMethod: 'cash' | 'card';
-    userId: string;
-    status?: 'pending' | 'pending_payment' | 'preparing' | 'ready' | 'out_for_delivery' | 'completed' | 'cancelled';
-    orderNumber?: string;
-  }) => {
-    if (items.length === 0) {
-      throw new Error('Cart is empty');
-    }
-
-    try {
-      console.log('🚀 Starting order creation process...');
-      console.log('📦 Cart items:', items.length);
-      console.log('💰 Total price:', getTotalPrice());
-      console.log('👤 User ID:', orderData.userId);
-
-      // Set user context for RLS
-      console.log('🔐 Setting user context for RLS...');
-      const { error: contextError } = await supabase.rpc('set_user_context', { 
-        user_id: orderData.userId, 
-        user_role: user?.role || 'customer'
-      });
-
-      if (contextError) {
-        console.error('❌ RLS context error:', contextError);
-        throw contextError;
-      }
-
-      console.log('✅ User context set successfully');
-
-      // Create the order
-      console.log('📝 Creating order in database...');
-      const orderInsertData: any = {
-        user_id: orderData.userId,
-        customer_name: orderData.customerName,
-        customer_email: orderData.customerEmail,
-        customer_phone: orderData.customerPhone,
-        customer_address: orderData.customerAddress,
-        order_type: orderData.orderType,
-        payment_method: orderData.paymentMethod,
-        status: orderData.status || 'pending',
-        total_amount: getTotalPrice(),
-        notes: null
-      };
-
-      // Add order number if provided (for kiosk mode)
-      // Note: This requires the order_number field to be added to the orders table
-      if (orderData.orderNumber) {
+      createOrder: async (orderData?: any) => {
         try {
-          orderInsertData.order_number = orderData.orderNumber;
+          console.log('Creating order with data:', orderData);
+          
+          const cartItems = get().items;
+          if (cartItems.length === 0) {
+            throw new Error('Cart is empty');
+          }
+
+          // Calculate total amount
+          const totalAmount = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+
+          // Create the order in the database
+          const { data: order, error: orderError } = await supabase
+            .from('orders')
+            .insert({
+              user_id: orderData?.userId || null,
+              customer_name: orderData?.customerName || 'Guest',
+              customer_email: orderData?.customerEmail || null,
+              customer_phone: orderData?.customerPhone || '',
+              customer_address: orderData?.customerAddress || null,
+              order_type: orderData?.orderType || 'pickup',
+              payment_method: orderData?.paymentMethod || 'cash',
+              status: orderData?.status || 'pending',
+              total_amount: totalAmount,
+              notes: orderData?.notes || null
+            })
+            .select()
+            .single();
+
+          if (orderError) {
+            console.error('Error creating order:', orderError);
+            throw new Error(`Failed to create order: ${orderError.message}`);
+          }
+
+          if (!order) {
+            throw new Error('Order creation returned no data');
+          }
+
+          // Create order items
+          const orderItems = cartItems.map(item => ({
+            order_id: order.id,
+            food_item_id: item.id,
+            quantity: item.quantity,
+            unit_price: item.price,
+            total_price: item.price * item.quantity,
+            size_name: item.size_name || null
+          }));
+
+          const { error: itemsError } = await supabase
+            .from('order_items')
+            .insert(orderItems);
+
+          if (itemsError) {
+            console.error('Error creating order items:', itemsError);
+            // Try to clean up the order if items creation failed
+            await supabase.from('orders').delete().eq('id', order.id);
+            throw new Error(`Failed to create order items: ${itemsError.message}`);
+          }
+
+          // Clear cart after successful order creation
+          get().clearCart();
+          
+          console.log('Order created successfully:', order);
+          return order;
         } catch (error) {
-          console.warn('⚠️ order_number field not available in database yet. Migration needed.');
+          console.error('Failed to create order:', error);
+          throw error;
         }
-      }
+      },
 
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert(orderInsertData)
-        .select()
-        .single();
+      // Database sync functions
+      saveCartToDatabase: async (userId: string) => {
+        try {
+          const items = get().items;
+          
+          // Clear existing cart items for this user first
+          await supabase
+            .from('cart_items')
+            .delete()
+            .eq('user_id', userId);
 
-      if (orderError) {
-        console.error('❌ Order creation error:', orderError);
-        throw orderError;
-      }
+          // Insert current cart items if any exist
+          if (items.length > 0) {
+            const cartItemsToInsert = items.map(item => ({
+              user_id: userId,
+              food_item_id: item.id,
+              quantity: item.quantity,
+              size_option_id: item.selected_size?.id || null,
+              size_name: item.selected_size?.name || null,
+              size_multiplier: item.selected_size?.price_multiplier || 1.0,
+              calculated_price: item.price
+            }));
 
-      console.log('✅ Order created successfully:', order.id);
+            const { error } = await supabase
+              .from('cart_items')
+              .insert(cartItemsToInsert);
 
-      // Create order items with size information
-      console.log('📋 Creating order items...');
-      const orderItems = items.map(item => ({
-        order_id: order.id,
-        food_item_id: item.id,
-        quantity: item.quantity,
-        unit_price: item.price,
-        total_price: item.price * item.quantity,
-        size_option_id: item.size_option_id || null,
-        size_name: item.size_name || null,
-        size_multiplier: item.size_multiplier || null
-      }));
+            if (error) {
+              console.error('Error saving cart to database:', error);
+              throw error;
+            }
+          }
+        } catch (error) {
+          console.error('Failed to save cart to database:', error);
+        }
+      },
 
-      console.log('📋 Order items to insert:', orderItems.length);
+      loadCartFromDatabase: async (userId: string) => {
+        try {
+          const { data: cartItems, error } = await supabase
+            .from('cart_items')
+            .select(`
+              *,
+              food_items (
+                id,
+                name,
+                description,
+                price,
+                image_url,
+                category_id,
+                is_available,
+                is_featured,
+                categories (
+                  name
+                )
+              )
+            `)
+            .eq('user_id', userId);
 
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
+          if (error) {
+            console.error('Error loading cart from database:', error);
+            return;
+          }
 
-      if (itemsError) {
-        console.error('❌ Order items creation error:', itemsError);
-        throw itemsError;
-      }
+          if (cartItems && cartItems.length > 0) {
+            const loadedItems: CartItemWithSize[] = cartItems.map(dbItem => ({
+              id: dbItem.food_items.id,
+              name: dbItem.food_items.name,
+              description: dbItem.food_items.description,
+              price: dbItem.calculated_price,
+              image: dbItem.food_items.image_url || '',
+              category: dbItem.food_items.categories?.name || '',
+              featured: dbItem.food_items.is_featured || false,
+              available: dbItem.food_items.is_available || true,
+              quantity: dbItem.quantity,
+              selected_size: dbItem.size_option_id ? {
+                id: dbItem.size_option_id,
+                name: dbItem.size_name,
+                price_multiplier: dbItem.size_multiplier
+              } : undefined
+            }));
 
-      console.log('✅ Order items created successfully');
+            set({ items: loadedItems });
+          }
+        } catch (error) {
+          console.error('Failed to load cart from database:', error);
+        }
+      },
 
-      // Clear the cart after successful order
-      console.log('🧹 Clearing cart...');
-      await clearCart();
+      clearCartFromDatabase: async (userId: string) => {
+        try {
+          const { error } = await supabase
+            .from('cart_items')
+            .delete()
+            .eq('user_id', userId);
 
-      // Store order in localStorage for order confirmation page
-      console.log('💾 Storing order in localStorage...');
-      const orderForStorage = {
-        id: order.id,
-        items: items,
-        total: getTotalPrice(),
-        status: orderData.status || 'pending',
-        orderNumber: orderData.orderNumber || order.id,
-        customerInfo: {
-          fullName: orderData.customerName,
-          contactNumber: orderData.customerPhone,
-          email: orderData.customerEmail,
-          address: orderData.customerAddress,
-          orderType: orderData.orderType,
-          paymentMethod: orderData.paymentMethod
-        },
-        createdAt: new Date().toISOString(),
-        estimatedTime: orderData.orderType === 'delivery' ? '30-45 minutes' : '15-20 minutes'
-      };
+          if (error) {
+            console.error('Error clearing cart from database:', error);
+          }
+        } catch (error) {
+          console.error('Failed to clear cart from database:', error);
+        }
+      },
 
-      localStorage.setItem('lastOrder', JSON.stringify(orderForStorage));
-      console.log('✅ Order stored in localStorage');
-      console.log('🎉 Order creation completed successfully!');
+      syncCartWithDatabase: async (userId: string) => {
+        try {
+          const localItems = get().items;
+          
+          // Load items from database
+          const { data: dbItems, error } = await supabase
+            .from('cart_items')
+            .select('*')
+            .eq('user_id', userId);
 
-      return order;
-    } catch (error) {
-      console.error('❌ Error creating order:', error);
-      throw error;
+          if (error) {
+            console.error('Error syncing cart with database:', error);
+            return;
+          }
+
+          // If local cart has items but database is empty, save local to database
+          if (localItems.length > 0 && (!dbItems || dbItems.length === 0)) {
+            await get().saveCartToDatabase(userId);
+          }
+          // If database has items but local is empty, load from database
+          else if ((!localItems || localItems.length === 0) && dbItems && dbItems.length > 0) {
+            await get().loadCartFromDatabase(userId);
+          }
+          // If both have items, merge them (prioritize local items for now)
+          else if (localItems.length > 0 && dbItems && dbItems.length > 0) {
+            await get().saveCartToDatabase(userId);
+          }
+        } catch (error) {
+          console.error('Failed to sync cart with database:', error);
+        }
+      },
+
+      getTotalItems: () => {
+        return get().items.reduce((total, item) => total + item.quantity, 0);
+      },
+
+      getTotalPrice: () => {
+        return get().items.reduce((total, item) => {
+          // Use the item price directly since it's already calculated with size adjustments
+          return total + (item.price * item.quantity);
+        }, 0);
+      },
+
+      getItemQuantity: (itemId: string, sizeId?: string) => {
+        const item = get().items.find(
+          (item) => item.id === itemId && item.selected_size?.id === sizeId
+        );
+        return item?.quantity || 0;
+      },
+    }),
+    {
+      name: 'boki-cart-storage',
+      partialize: (state) => ({ 
+        items: state.items 
+      }),
     }
-  };
+  )
+);
+
+// Hook for cart notifications
+export const useCartNotifications = () => {
+  const lastAddedItem = useCart((state) => state.lastAddedItem);
+  const [showNotification, setShowNotification] = useState(false);
+
+  useEffect(() => {
+    if (lastAddedItem) {
+      setShowNotification(true);
+      const timer = setTimeout(() => {
+        setShowNotification(false);
+        useCart.setState({ lastAddedItem: null });
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [lastAddedItem]);
 
   return {
-    items,
-    isLoading,
-    addToCart,
-    removeFromCart,
-    updateQuantity,
-    clearCart,
-    getTotalPrice,
-    getTotalItems,
-    createOrder,
+    showNotification,
+    lastAddedItem,
+    hideNotification: () => setShowNotification(false),
   };
 };

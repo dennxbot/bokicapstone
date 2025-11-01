@@ -51,6 +51,7 @@ const CashierPage: React.FC = () => {
   ];
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
   const [lastOrderCount, setLastOrderCount] = useState(0);
+  const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
   const [notificationState, setNotificationState] = useState<{
     type: 'success' | 'error';
     message: string;
@@ -83,6 +84,76 @@ const CashierPage: React.FC = () => {
 
     return () => clearInterval(interval);
   }, [isAuthenticated, isAdmin, authLoading, navigate, fetchOrders, fetchKioskOrders]);
+
+  // Real-time subscriptions for cashier synchronization
+  useEffect(() => {
+    if (!isAuthenticated || !isAdmin) return;
+
+    console.log('Setting up real-time subscriptions for cashier...');
+
+    // Subscribe to orders table changes
+    const ordersSubscription = supabase
+      .channel('cashier_orders_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'orders' },
+        (payload) => {
+          console.log('Orders table changed (cashier):', payload);
+          fetchOrders();
+          setLastSyncTime(new Date());
+        }
+      )
+      .subscribe();
+
+    // Subscribe to kiosk_orders table changes
+    const kioskOrdersSubscription = supabase
+      .channel('cashier_kiosk_orders_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'kiosk_orders' },
+        (payload) => {
+          console.log('Kiosk orders table changed (cashier):', payload);
+          fetchKioskOrders();
+          setLastSyncTime(new Date());
+        }
+      )
+      .subscribe();
+
+    // Subscribe to order_items table changes
+    const orderItemsSubscription = supabase
+      .channel('cashier_order_items_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'order_items' },
+        (payload) => {
+          console.log('Order items table changed (cashier):', payload);
+          fetchOrders();
+          setLastSyncTime(new Date());
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('Cleaning up cashier subscriptions...');
+      supabase.removeChannel(ordersSubscription);
+      supabase.removeChannel(kioskOrdersSubscription);
+      supabase.removeChannel(orderItemsSubscription);
+    };
+  }, [isAuthenticated, isAdmin, fetchOrders, fetchKioskOrders]);
+
+  // Auto-refresh when page becomes visible
+  useEffect(() => {
+    if (!isAuthenticated || !isAdmin) return;
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('Cashier page became visible, refreshing orders...');
+        fetchOrders();
+        fetchKioskOrders();
+        setLastSyncTime(new Date());
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isAuthenticated, isAdmin, fetchOrders, fetchKioskOrders]);
 
   // Sound notification for new orders
   useEffect(() => {
@@ -457,11 +528,28 @@ const CashierPage: React.FC = () => {
                   <div className="flex-1">
                     <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-1 sm:mb-2 tracking-tight">Cashier Dashboard</h1>
                     <p className="text-sm sm:text-base lg:text-lg text-gray-600 font-medium mb-2 sm:mb-0">Manage customer payments for kiosk orders</p>
-                    <div className="flex items-center mt-2 sm:mt-3 text-xs sm:text-sm">
+                    <div className="flex items-center mt-2 sm:mt-3 text-xs sm:text-sm space-x-4">
                       <div className="flex items-center bg-green-100 text-green-700 px-2 sm:px-3 py-1 rounded-full">
                         <div className="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-green-500 rounded-full animate-pulse mr-1 sm:mr-2"></div>
                         <span className="hidden sm:inline">Live updates every 30s</span>
                         <span className="sm:hidden">Live updates</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => {
+                            fetchOrders();
+                            fetchKioskOrders();
+                            setLastSyncTime(new Date());
+                          }}
+                          disabled={isLoading}
+                          className="flex items-center space-x-1 bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 sm:px-3 py-1 rounded-full transition-colors disabled:opacity-50"
+                        >
+                          <i className={`ri-refresh-line text-xs ${isLoading ? 'animate-spin' : ''}`}></i>
+                          <span className="hidden sm:inline">Refresh</span>
+                        </button>
+                        <div className="text-xs text-gray-500">
+                          Last sync: {lastSyncTime.toLocaleTimeString()}
+                        </div>
                       </div>
                     </div>
                   </div>

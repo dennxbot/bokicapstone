@@ -21,30 +21,30 @@ export default function BottomNavigation() {
 
   // Filter navigation items based on kiosk mode
   const navItems = isKioskMode 
-    ? allNavItems.filter(item => !['orders', 'profile'].includes(item.path.replace('/', '')))
+    ? allNavItems.filter(item => !['orders', 'profile', ''].includes(item.path.replace('/', '')))
     : allNavItems;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-orange-100 px-4 py-2 z-50 shadow-2xl">
-      <div className="flex justify-around items-center max-w-md mx-auto">
+    <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-orange-100 px-4 py-3 sm:py-4 z-50 shadow-2xl">
+      <div className="flex justify-around items-center w-full">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
             <button
               key={item.path}
               onClick={() => navigate(item.path)}
-              className={`flex flex-col items-center py-2 px-3 rounded-2xl transition-all duration-300 cursor-pointer transform ${
+              className={`flex flex-col items-center py-2 sm:py-3 px-3 sm:px-4 rounded-2xl transition-all duration-300 cursor-pointer transform min-h-[60px] sm:min-h-[70px] ${
                 isActive
                   ? 'text-white bg-gradient-to-r from-orange-500 to-red-500 shadow-lg scale-110'
                   : 'text-gray-500 hover:text-orange-500 hover:bg-orange-50'
               }`}
             >
               <div className="relative">
-                <div className="w-6 h-6 flex items-center justify-center">
-                  <i className={`${isActive ? item.activeIcon : item.icon} text-xl`} />
+                <div className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center">
+                  <i className={`${isActive ? item.activeIcon : item.icon} text-xl sm:text-2xl`} />
                 </div>
                 {item.path === '/cart' && totalItems > 0 && (
-                  <span className={`absolute -top-2 -right-2 text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold ${
+                  <span className={`absolute -top-2 -right-2 text-xs sm:text-sm rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center font-bold ${
                     isActive 
                       ? 'bg-white text-orange-500' 
                       : 'bg-gradient-to-r from-orange-500 to-red-500 text-white'
@@ -53,7 +53,7 @@ export default function BottomNavigation() {
                   </span>
                 )}
               </div>
-              <span className={`text-xs mt-1 font-medium ${isActive ? 'text-white' : ''}`}>
+              <span className={`text-xs sm:text-sm mt-1 font-medium ${isActive ? 'text-white' : ''}`}>
                 {item.label}
               </span>
             </button>

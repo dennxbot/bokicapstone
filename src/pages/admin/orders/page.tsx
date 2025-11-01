@@ -36,6 +36,7 @@ const AdminOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
 
   useEffect(() => {
     // Wait for auth to load before checking
@@ -49,6 +50,70 @@ const AdminOrders = () => {
 
     fetchOrders();
   }, [isAuthenticated, isAdmin, isLoading, navigate]);
+
+  // Real-time subscriptions for orders synchronization
+  useEffect(() => {
+    if (!isAuthenticated || !isAdmin) return;
+
+    console.log('Setting up real-time subscriptions for orders...');
+
+    // Subscribe to orders table changes
+    const ordersSubscription = supabase
+      .channel('orders_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'orders' },
+        (payload) => {
+          console.log('Orders table changed:', payload);
+          fetchOrders();
+        }
+      )
+      .subscribe();
+
+    // Subscribe to order_items table changes
+    const orderItemsSubscription = supabase
+      .channel('order_items_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'order_items' },
+        (payload) => {
+          console.log('Order items table changed:', payload);
+          fetchOrders();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('Cleaning up orders subscriptions...');
+      supabase.removeChannel(ordersSubscription);
+      supabase.removeChannel(orderItemsSubscription);
+    };
+  }, [isAuthenticated, isAdmin]);
+
+  // Auto-refresh when page becomes visible
+  useEffect(() => {
+    if (!isAuthenticated || !isAdmin) return;
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('Page became visible, refreshing orders...');
+        fetchOrders();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isAuthenticated, isAdmin]);
+
+  // Periodic auto-refresh every 5 minutes
+  useEffect(() => {
+    if (!isAuthenticated || !isAdmin) return;
+
+    const interval = setInterval(() => {
+      console.log('Periodic refresh of orders...');
+      fetchOrders();
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated, isAdmin]);
 
   const fetchOrders = async () => {
     try {
@@ -73,6 +138,7 @@ const AdminOrders = () => {
       if (error) throw error;
 
       setOrders(ordersData || []);
+      setLastSyncTime(new Date());
     } catch (error) {
       console.error('Error fetching orders:', error);
     } finally {
@@ -234,8 +300,25 @@ const AdminOrders = () => {
                 </div>
                 Filter Orders
               </h2>
-              <div className="text-sm text-gray-600">
-                Showing {filteredOrders.length} of {orders.length} orders
+              
+              {/* Refresh Button and Sync Indicator */}
+              <div className="flex items-center space-x-4">
+                <div className="text-right">
+                  <Button
+                    onClick={fetchOrders}
+                    disabled={loading}
+                    className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-2 text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center"
+                  >
+                    <i className={`ri-refresh-line mr-2 ${loading ? 'animate-spin' : ''}`}></i>
+                    {loading ? 'Refreshing...' : 'Refresh'}
+                  </Button>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Last sync: {lastSyncTime.toLocaleTimeString()}
+                  </div>
+                </div>
+                <div className="text-sm text-gray-600">
+                  Showing {filteredOrders.length} of {orders.length} orders
+                </div>
               </div>
             </div>
             

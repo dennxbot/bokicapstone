@@ -47,6 +47,11 @@ export const formatPHP = (amount: number, showDecimals: boolean = true): string 
  * @returns Formatted currency string (e.g., "₱59.00")
  */
 export const formatPesoSimple = (amount: number, showDecimals: boolean = true): string => {
+  // Handle undefined or null values
+  if (amount === undefined || amount === null || isNaN(amount)) {
+    return '₱0.00';
+  }
+  
   const decimals = showDecimals ? 2 : 0;
   return `₱${amount.toFixed(decimals)}`;
 };

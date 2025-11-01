@@ -54,6 +54,7 @@ const AdminCustomers = () => {
   const [showBanHistory, setShowBanHistory] = useState(false);
   const [selectedCustomerForHistory, setSelectedCustomerForHistory] = useState<Customer | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
 
   // Filter customers based on search term
   const filteredCustomers = customers.filter(customer => {
@@ -79,6 +80,73 @@ const AdminCustomers = () => {
 
     fetchCustomers();
   }, [isAuthenticated, isAdmin, isLoading, navigate]);
+
+  // Real-time synchronization with Supabase
+  useEffect(() => {
+    if (!isAuthenticated || !isAdmin) return;
+
+    // Set up real-time subscriptions for data changes
+    const usersSubscription = supabase
+      .channel('admin-customers-users')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'users' },
+        (payload) => {
+          console.log('Users table changed:', payload);
+          fetchCustomers(); // Refresh data when users change
+        }
+      )
+      .subscribe();
+
+    const ordersSubscription = supabase
+      .channel('admin-customers-orders')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
+        (payload) => {
+          console.log('Orders table changed:', payload);
+          fetchCustomers(); // Refresh data when orders change
+        }
+      )
+      .subscribe();
+
+    const bansSubscription = supabase
+      .channel('admin-customers-bans')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'customer_bans' },
+        (payload) => {
+          console.log('Customer bans changed:', payload);
+          fetchCustomers(); // Refresh data when bans change
+        }
+      )
+      .subscribe();
+
+    // Auto-refresh when page becomes visible (user switches back to tab)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchCustomers();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Cleanup subscriptions on unmount
+    return () => {
+      usersSubscription.unsubscribe();
+      ordersSubscription.unsubscribe();
+      bansSubscription.unsubscribe();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isAuthenticated, isAdmin]);
+
+  // Auto-refresh every 5 minutes for additional synchronization
+  useEffect(() => {
+    if (!isAuthenticated || !isAdmin) return;
+
+    const interval = setInterval(() => {
+      fetchCustomers();
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated, isAdmin]);
 
   const fetchCustomers = async () => {
     try {
@@ -141,6 +209,7 @@ const AdminCustomers = () => {
       }) || [];
 
       setCustomers(customersWithStats);
+      setLastSyncTime(new Date()); // Update sync time on successful fetch
     } catch (error) {
       console.error('Error fetching customers:', error);
     } finally {
@@ -329,15 +398,23 @@ const AdminCustomers = () => {
                     <div className="text-2xl font-bold text-gray-900">{customers.length}</div>
                     <div className="text-xs text-gray-600 font-medium">Total Customers</div>
                   </div>
-                  <Button
-                    onClick={fetchCustomers}
-                    variant="outline"
-                    className="bg-blue-50 border-2 border-blue-300 text-blue-700 hover:bg-blue-100 px-4 py-2 font-semibold rounded-xl transition-all duration-200 hover:scale-105"
-                    disabled={loading}
-                  >
-                    <i className="ri-refresh-line mr-2"></i>
-                    {loading ? 'Refreshing...' : 'Refresh'}
-                  </Button>
+                  <div className="flex flex-col items-center space-y-2">
+                    <Button
+                      onClick={fetchCustomers}
+                      variant="outline"
+                      className="bg-blue-50 border-2 border-blue-300 text-blue-700 hover:bg-blue-100 px-4 py-2 font-semibold rounded-xl transition-all duration-200 hover:scale-105"
+                      disabled={loading}
+                    >
+                      <i className="ri-refresh-line mr-2"></i>
+                      {loading ? 'Refreshing...' : 'Refresh'}
+                    </Button>
+                    {lastSyncTime && (
+                      <div className="text-xs text-gray-500 flex items-center">
+                        <i className="ri-time-line mr-1"></i>
+                        Last sync: {lastSyncTime.toLocaleTimeString()}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

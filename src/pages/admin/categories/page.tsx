@@ -30,6 +30,7 @@ const AdminCategories = () => {
     image_url: '',
     is_active: true
   });
+  const [lastSyncTime, setLastSyncTime] = useState(new Date());
 
   useEffect(() => {
     // Wait for auth to load before checking
@@ -42,6 +43,48 @@ const AdminCategories = () => {
     }
 
     fetchCategories();
+
+    // Set up real-time subscription for categories
+    const categoriesChannel = supabase
+      .channel('categories-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'categories' },
+        (payload) => {
+          console.log('Categories change received:', payload);
+          fetchCategories();
+        }
+      )
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'food_items' },
+        (payload) => {
+          console.log('Food items change received (affects category counts):', payload);
+          fetchCategories();
+        }
+      )
+      .subscribe();
+
+    // Handle page visibility changes
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchCategories();
+        setLastSyncTime(new Date());
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Auto-refresh every 2 minutes
+    const refreshInterval = setInterval(() => {
+      if (!document.hidden) {
+        fetchCategories();
+      }
+    }, 120000);
+
+    return () => {
+      categoriesChannel.unsubscribe();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearInterval(refreshInterval);
+    };
   }, [isAuthenticated, isAdmin, isLoading, navigate]);
 
   const fetchCategories = async () => {
@@ -66,6 +109,7 @@ const AdminCategories = () => {
       })) || [];
 
       setCategories(categoriesWithCount);
+      setLastSyncTime(new Date());
     } catch (error) {
       console.error('Error fetching categories:', error);
     } finally {
@@ -280,6 +324,28 @@ const AdminCategories = () => {
                   Category Management
                 </h1>
                 <p className="text-slate-600 mt-1 font-medium">Organize your menu with food categories</p>
+                <div className="flex items-center mt-2 space-x-4">
+                  <div className="flex items-center bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
+                    Real-time sync
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => {
+                        fetchCategories();
+                        setLastSyncTime(new Date());
+                      }}
+                      disabled={loading}
+                      className="flex items-center space-x-1 bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1 rounded-full transition-colors disabled:opacity-50 text-sm"
+                    >
+                      <i className={`ri-refresh-line text-xs ${loading ? 'animate-spin' : ''}`}></i>
+                      <span>Refresh</span>
+                    </button>
+                    <div className="text-xs text-gray-500">
+                      Last sync: {lastSyncTime.toLocaleTimeString()}
+                    </div>
+                  </div>
+                </div>
               </div>
               
               {/* Category Stats */}

@@ -44,6 +44,7 @@ const AdminMenu = () => {
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [newItem, setNewItem] = useState({
     name: '',
@@ -68,6 +69,105 @@ const AdminMenu = () => {
     fetchMenuData();
     fetchAllSizeOptions();
   }, [isAuthenticated, isAdmin, isLoading, navigate]);
+
+  // Real-time subscriptions for menu synchronization
+  useEffect(() => {
+    if (!isAuthenticated || !isAdmin) return;
+
+    console.log('Setting up real-time subscriptions for menu...');
+
+    // Subscribe to food_items table changes
+    const foodItemsSubscription = supabase
+      .channel('menu_food_items_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'food_items' },
+        (payload) => {
+          console.log('Food items table changed (menu):', payload);
+          fetchMenuData();
+          setLastSyncTime(new Date());
+        }
+      )
+      .subscribe();
+
+    // Subscribe to categories table changes
+    const categoriesSubscription = supabase
+      .channel('menu_categories_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'categories' },
+        (payload) => {
+          console.log('Categories table changed (menu):', payload);
+          fetchMenuData();
+          setLastSyncTime(new Date());
+        }
+      )
+      .subscribe();
+
+    // Subscribe to food_item_sizes table changes
+    const foodItemSizesSubscription = supabase
+      .channel('menu_food_item_sizes_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'food_item_sizes' },
+        (payload) => {
+          console.log('Food item sizes table changed (menu):', payload);
+          fetchMenuData();
+          setLastSyncTime(new Date());
+        }
+      )
+      .subscribe();
+
+    // Subscribe to size_options table changes
+    const sizeOptionsSubscription = supabase
+      .channel('menu_size_options_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'size_options' },
+        (payload) => {
+          console.log('Size options table changed (menu):', payload);
+          fetchMenuData();
+          fetchAllSizeOptions();
+          setLastSyncTime(new Date());
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('Cleaning up menu subscriptions...');
+      supabase.removeChannel(foodItemsSubscription);
+      supabase.removeChannel(categoriesSubscription);
+      supabase.removeChannel(foodItemSizesSubscription);
+      supabase.removeChannel(sizeOptionsSubscription);
+    };
+  }, [isAuthenticated, isAdmin, fetchAllSizeOptions]);
+
+  // Auto-refresh when page becomes visible
+  useEffect(() => {
+    if (!isAuthenticated || !isAdmin) return;
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('Menu page became visible, refreshing data...');
+        fetchMenuData();
+        fetchAllSizeOptions();
+        setLastSyncTime(new Date());
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isAuthenticated, isAdmin, fetchAllSizeOptions]);
+
+  // Periodic auto-refresh every 5 minutes
+  useEffect(() => {
+    if (!isAuthenticated || !isAdmin) return;
+
+    const interval = setInterval(() => {
+      console.log('Periodic refresh for menu data...');
+      fetchMenuData();
+      fetchAllSizeOptions();
+      setLastSyncTime(new Date());
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated, isAdmin, fetchAllSizeOptions]);
 
   const fetchMenuData = async () => {
     try {
@@ -121,6 +221,7 @@ const AdminMenu = () => {
       });
       
       setMenuItems(processedMenuData);
+      setLastSyncTime(new Date());
     } catch (error) {
       console.error('Error fetching menu data:', error);
     } finally {
@@ -378,6 +479,29 @@ const AdminMenu = () => {
                     Menu Management
                   </h1>
                   <p className="text-slate-600 mt-1 font-medium">Create and manage your restaurant menu items</p>
+                  <div className="flex items-center mt-2 space-x-4">
+                    <div className="flex items-center bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
+                      Real-time sync
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => {
+                          fetchMenuData();
+                          fetchAllSizeOptions();
+                          setLastSyncTime(new Date());
+                        }}
+                        disabled={loading}
+                        className="flex items-center space-x-1 bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1 rounded-full transition-colors disabled:opacity-50 text-sm"
+                      >
+                        <i className={`ri-refresh-line text-xs ${loading ? 'animate-spin' : ''}`}></i>
+                        <span>Refresh</span>
+                      </button>
+                      <div className="text-xs text-gray-500">
+                        Last sync: {lastSyncTime.toLocaleTimeString()}
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 
                 {/* Menu Stats */}

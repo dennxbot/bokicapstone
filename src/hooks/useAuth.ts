@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { syncCartOnLogin, clearCartOnLogout } from '../utils/cartSync';
 
 interface UserProfile {
   id: string;
@@ -24,6 +25,11 @@ export const useAuth = () => {
         setUser(parsedUser);
         // Set user context for RLS policies
         setUserContext(parsedUser);
+        
+        // Sync cart with database when user is loaded from localStorage
+        setTimeout(() => {
+          syncCartOnLogin(parsedUser.id).catch(console.error);
+        }, 0);
       } catch (error) {
         console.error('Error parsing stored user:', error);
         localStorage.removeItem('currentUser');
@@ -87,6 +93,13 @@ export const useAuth = () => {
         // Set user context for RLS policies
         await setUserContext(userData);
 
+        // Sync cart with database after successful login (skip for kiosk users)
+        if (userData.email !== 'kiosk@boki.com') {
+          setTimeout(() => {
+            syncCartOnLogin(userData.id).catch(console.error);
+          }, 0);
+        }
+
         return { success: true, user: userData };
       }
 
@@ -96,6 +109,13 @@ export const useAuth = () => {
       
       // Set user context for RLS policies
       await setUserContext(userProfile);
+
+      // Sync cart with database after successful login (skip for kiosk users)
+      if (userProfile.email !== 'kiosk@boki.com') {
+        setTimeout(() => {
+          syncCartOnLogin(userProfile.id).catch(console.error);
+        }, 0);
+      }
 
       return { success: true, user: userProfile };
     } catch (error: any) {
@@ -205,6 +225,15 @@ export const useAuth = () => {
   };
 
   const logout = async () => {
+    // Clear cart from database before logout if user is logged in (skip for kiosk users)
+    if (user && user.email !== 'kiosk@boki.com') {
+      try {
+        await clearCartOnLogout(user.id);
+      } catch (error) {
+        console.error('Error clearing cart on logout:', error);
+      }
+    }
+
     // Sign out from Supabase Auth
     await supabase.auth.signOut();
     
