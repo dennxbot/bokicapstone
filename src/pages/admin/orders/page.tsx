@@ -17,6 +17,7 @@ interface Order {
   payment_method: string;
   status: string;
   total_amount: number;
+  delivery_fee: number;
   notes: string;
   created_at: string;
   order_items: {
@@ -196,6 +197,14 @@ const AdminOrders = () => {
     if (diffInMinutes < 60) return `${diffInMinutes} min ago`;
     if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)} hour${Math.floor(diffInMinutes / 60) > 1 ? 's' : ''} ago`;
     return `${Math.floor(diffInMinutes / 1440)} day${Math.floor(diffInMinutes / 1440) > 1 ? 's' : ''} ago`;
+  };
+
+  const getDeliveryFee = (order: Order) => {
+    return order.delivery_fee || 0;
+  };
+
+  const getSubtotal = (order: Order) => {
+    return order.total_amount - getDeliveryFee(order);
   };
 
   const getNextStatus = (currentStatus: string, orderType: string) => {
@@ -396,7 +405,19 @@ const AdminOrders = () => {
                             {order.status.replace('_', ' ')}
                           </span>
                           <div className="text-right">
-                            <div className="text-2xl font-bold text-gray-900">{formatPesoSimple(order.total_amount)}</div>
+                            <div className="space-y-1">
+                              <div className="text-sm text-gray-600">
+                                Subtotal: {formatPesoSimple(getSubtotal(order))}
+                              </div>
+                              {order.order_type === 'delivery' && (
+                                <div className="text-sm text-gray-600">
+                                  Delivery Fee: {formatPesoSimple(getDeliveryFee(order))}
+                                </div>
+                              )}
+                              <div className="text-2xl font-bold text-gray-900 border-t pt-1">
+                                {formatPesoSimple(order.total_amount)}
+                              </div>
+                            </div>
                             <div className="text-xs text-gray-600 font-medium">Total Amount</div>
                           </div>
                         </div>

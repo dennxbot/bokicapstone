@@ -62,7 +62,7 @@ const AdminMenu = () => {
 
     // If not authenticated or not admin, redirect to login
     if (!isAuthenticated || !isAdmin) {
-      navigate('/admin/login');
+      navigate('/login');
       return;
     }
 

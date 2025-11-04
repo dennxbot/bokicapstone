@@ -184,7 +184,8 @@ export default function Checkout() {
           orderType: formData.deliveryMethod as 'delivery' | 'pickup',
           paymentMethod: formData.paymentMethod as 'cash' | 'card',
           userId: user.id,
-          status: 'pending'
+          status: 'pending',
+          deliveryFee: deliveryFee
         });
       }
 
@@ -220,6 +221,8 @@ export default function Checkout() {
         if (!order) {
           throw new Error('Failed to create order');
         }
+        // Ensure cart is cleared for regular mode as well
+        await clearCart();
         navigate(`/order-confirmation/${order.id}`);
       }
     } catch (error) {

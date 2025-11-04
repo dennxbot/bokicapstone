@@ -9,16 +9,21 @@ import { supabase } from '../../lib/supabase';
 const OrderDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const { getOrderById } = useOrders();
   const [order, setOrder] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Redirect to login if not authenticated (only after loading is complete)
   useEffect(() => {
-    if (!user) {
+    if (!authLoading && !user) {
       navigate('/login');
-      return;
     }
+  }, [user, authLoading, navigate]);
+
+  useEffect(() => {
+    // Don't load order if still checking auth or user not authenticated
+    if (authLoading || !user) return;
 
     const loadOrder = async () => {
       if (!id) return;
@@ -96,6 +101,18 @@ const OrderDetails = () => {
       active: index === currentIndex
     }));
   };
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-orange-500 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

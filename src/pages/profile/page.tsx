@@ -13,19 +13,12 @@ import BottomNavigation from '../../components/feature/BottomNavigation';
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { user, updateProfile, logout } = useAuth();
+  const { user, updateProfile, logout, isLoading: authLoading } = useAuth();
   const { favoritesCount } = useFavorites();
   const { isBanned } = useBanStatus();
   const { isKioskMode } = useKioskAuth();
   
-  // Redirect to menu if in kiosk mode
-  useEffect(() => {
-    if (isKioskMode) {
-      navigate('/menu', { replace: true });
-      return;
-    }
-  }, [isKioskMode, navigate]);
-  
+  // All useState hooks must be called before any conditional returns
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('personal');
@@ -50,7 +43,23 @@ const Profile = () => {
     newPassword: '',
     confirmPassword: ''
   });
+  
+  // Redirect to menu if in kiosk mode
+  useEffect(() => {
+    if (isKioskMode) {
+      navigate('/menu', { replace: true });
+      return;
+    }
+  }, [isKioskMode, navigate]);
 
+  // Redirect to login if not authenticated (only after loading is complete)
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/login');
+    }
+  }, [user, authLoading, navigate]);
+
+  // Update form data when user changes
   useEffect(() => {
     if (user) {
       setFormData({
@@ -60,6 +69,20 @@ const Profile = () => {
       });
     }
   }, [user]);
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
+
+  // Return null if not authenticated (will redirect via useEffect)
+  if (!user) {
+    return null;
+  }
 
   const validateForm = () => {
     const errors: Record<string, string> = {};

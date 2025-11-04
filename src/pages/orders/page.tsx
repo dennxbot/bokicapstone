@@ -5,7 +5,9 @@ import { useAuth } from '../../hooks/useAuth';
 import { useOrders } from '../../hooks/useOrders';
 import { useBanStatus } from '../../hooks/useBanStatus';
 import { useKioskAuth } from '../../hooks/useKioskAuth';
+import { useCart } from '../../hooks/useCart';
 import { formatPesoSimple } from '../../lib/currency';
+import { reorderItems, showUnavailableItemsDetails } from '../../lib/reorder';
 import BottomNavigation from '../../components/feature/BottomNavigation';
 import BannedUserWarning from '../../components/feature/BannedUserWarning';
 import Button from '../../components/base/Button';
@@ -14,12 +16,14 @@ export default function Orders() {
   const navigate = useNavigate();
   const { user, logout, isLoading } = useAuth();
   const { fetchUserOrders } = useOrders();
+  const { addToCart } = useCart();
   const banStatus = useBanStatus();
   const { isKioskMode } = useKioskAuth();
   const [orders, setOrders] = useState<any[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'amount'>('newest');
+  const [reorderingOrderId, setReorderingOrderId] = useState<string | null>(null);
 
   // Redirect to menu if in kiosk mode
   useEffect(() => {
@@ -102,6 +106,35 @@ export default function Orders() {
     return status.split('_').map(word => 
       word.charAt(0).toUpperCase() + word.slice(1)
     ).join(' ');
+  };
+
+  // Handle reorder functionality
+  const handleReorder = async (orderId: string) => {
+    if (reorderingOrderId) return; // Prevent multiple simultaneous reorders
+    
+    setReorderingOrderId(orderId);
+    
+    try {
+      const result = await reorderItems(orderId, addToCart);
+      
+      if (result.success) {
+        // Show detailed info about unavailable items if any
+        if (result.unavailableItems.length > 0) {
+          setTimeout(() => {
+            showUnavailableItemsDetails(result.unavailableItems);
+          }, 1000);
+        }
+        
+        // Navigate to cart to show added items
+        setTimeout(() => {
+          navigate('/cart');
+        }, 1500);
+      }
+    } catch (error) {
+      console.error('Reorder failed:', error);
+    } finally {
+      setReorderingOrderId(null);
+    }
   };
 
   // Filter and sort orders
@@ -356,9 +389,29 @@ export default function Orders() {
                     {/* Order Footer */}
                     <div className="bg-gray-50 px-4 sm:px-6 py-4">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        <div>
-                          <div className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
-                            {formatPesoSimple(order.total_amount)}
+                        <div className="flex-1">
+                          {/* Order Summary Breakdown */}
+                          <div className="space-y-2 mb-3">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Subtotal:</span>
+                              <span className="font-medium">{formatPesoSimple(order.total_amount - (order.delivery_fee || 0))}</span>
+                            </div>
+                            {!isKioskMode && (
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-600">Delivery Fee:</span>
+                                <span className="font-medium">
+                                  {(order.delivery_fee || 0) > 0 ? formatPesoSimple(order.delivery_fee) : 'Free'}
+                                </span>
+                              </div>
+                            )}
+                            <div className="border-t border-gray-200 pt-2">
+                              <div className="flex justify-between">
+                                <span className="text-lg font-bold text-gray-900">Total:</span>
+                                <span className="text-lg font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
+                                  {formatPesoSimple(order.total_amount)}
+                                </span>
+                              </div>
+                            </div>
                           </div>
                           <div className="text-sm text-gray-600 flex items-center gap-2">
                             <i className={`${order.order_type === 'delivery' ? 'ri-truck-line' : 'ri-store-2-line'} text-orange-500`}></i>
@@ -379,11 +432,26 @@ export default function Orders() {
                           
                           {order.status === 'completed' && (
                             <Button
-                              onClick={() => navigate('/menu')}
-                              className="text-sm px-3 sm:px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white flex-1 sm:flex-none whitespace-nowrap"
+                              onClick={() => handleReorder(order.id)}
+                              disabled={reorderingOrderId === order.id}
+                              className={`text-sm px-3 sm:px-4 py-2 flex-1 sm:flex-none whitespace-nowrap transition-all duration-200 ${
+                                reorderingOrderId === order.id
+                                  ? 'bg-gray-400 cursor-not-allowed'
+                                  : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600'
+                              } text-white`}
                             >
-                              <i className="ri-repeat-line mr-1 sm:mr-2"></i>
-                              Reorder
+                              {reorderingOrderId === order.id ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-1 sm:mr-2"></div>
+                                  <span className="hidden xs:inline">Processing...</span>
+                                  <span className="xs:hidden">...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <i className="ri-repeat-line mr-1 sm:mr-2"></i>
+                                  Reorder
+                                </>
+                              )}
                             </Button>
                           )}
                         </div>

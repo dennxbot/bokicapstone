@@ -144,20 +144,7 @@ export default function Login() {
             </Link>
           </div>
 
-          {/* Demo Accounts */}
-          <div className="mt-8 p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-2xl border border-orange-100">
-            <h4 className="font-semibold text-gray-900 mb-3 text-center">Demo Accounts</h4>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Customer:</span>
-                <span className="font-mono text-gray-800">customer@demo.com / demo123</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Admin:</span>
-                <span className="font-mono text-gray-800">admin@demo.com / admin123</span>
-              </div>
-            </div>
-          </div>
+
         </div>
 
         {/* Footer */}

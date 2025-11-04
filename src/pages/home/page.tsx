@@ -292,8 +292,9 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center">
                 <Button
                   onClick={() => navigate('/menu')}
+                  variant="outline"
                   size="lg"
-                  className="group bg-white text-orange-600 hover:bg-gray-100 px-10 py-4 text-lg font-semibold shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
+                  className="group border-2 border-white text-white hover:bg-white hover:text-orange-600 px-10 py-4 text-lg font-semibold shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 backdrop-blur-sm"
                 >
                   <i className="ri-shopping-cart-line mr-3 text-xl group-hover:animate-bounce"></i>
                   Start Ordering

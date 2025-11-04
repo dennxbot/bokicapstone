@@ -33,16 +33,28 @@ CREATE TRIGGER order_status_change_trigger
     FOR EACH ROW
     EXECUTE FUNCTION create_order_status_history();
 
--- Function to calculate order total from order items
+-- Function to calculate order total from order items plus delivery fee
 CREATE OR REPLACE FUNCTION calculate_order_total(order_uuid UUID)
 RETURNS DECIMAL(10,2) AS $$
 DECLARE
+    items_total DECIMAL(10,2);
+    order_delivery_fee DECIMAL(10,2);
     total DECIMAL(10,2);
 BEGIN
+    -- Calculate items total
     SELECT COALESCE(SUM(total_price), 0)
-    INTO total
+    INTO items_total
     FROM order_items
     WHERE order_id = order_uuid;
+    
+    -- Get delivery fee from orders table
+    SELECT COALESCE(orders.delivery_fee, 0)
+    INTO order_delivery_fee
+    FROM orders
+    WHERE orders.id = order_uuid;
+    
+    -- Calculate total including delivery fee
+    total := items_total + order_delivery_fee;
     
     RETURN total;
 END;

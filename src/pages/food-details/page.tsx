@@ -117,7 +117,7 @@ export default function FoodDetails() {
         id: item.id,
         name: item.name,
         description: item.description || '',
-        price: item.price,
+        price: currentPrice, // Use calculated price instead of original price
         image: item.image_url || '',
         category: item.category?.name || '',
         featured: item.is_featured || false,

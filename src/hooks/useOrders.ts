@@ -14,6 +14,7 @@ interface Order {
   payment_method: 'cash' | 'card' | 'online';
   status: 'pending' | 'pending_payment' | 'preparing' | 'ready' | 'out_for_delivery' | 'completed' | 'cancelled';
   total_amount: number;
+  delivery_fee: number;
   notes: string | null;
   created_at: string;
   updated_at: string;

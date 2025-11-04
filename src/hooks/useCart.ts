@@ -178,8 +178,10 @@ export const useCart = create<CartStore>()(
             throw new Error('Cart is empty');
           }
 
-          // Calculate total amount
-          const totalAmount = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+          // Calculate total amount including delivery fee
+          const cartTotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+          const deliveryFee = orderData?.deliveryFee || 0;
+          const totalAmount = cartTotal + deliveryFee;
 
           // Create the order in the database
           const { data: order, error: orderError } = await supabase
@@ -194,6 +196,7 @@ export const useCart = create<CartStore>()(
               payment_method: orderData?.paymentMethod || 'cash',
               status: orderData?.status || 'pending',
               total_amount: totalAmount,
+              delivery_fee: deliveryFee,
               notes: orderData?.notes || null
             })
             .select()
@@ -215,7 +218,9 @@ export const useCart = create<CartStore>()(
             quantity: item.quantity,
             unit_price: item.price,
             total_price: item.price * item.quantity,
-            size_name: item.size_name || null
+            size_option_id: item.selected_size?.id || null,
+            size_name: item.selected_size?.name || null,
+            size_multiplier: item.selected_size?.price_multiplier || null
           }));
 
           const { error: itemsError } = await supabase
@@ -244,6 +249,21 @@ export const useCart = create<CartStore>()(
       saveCartToDatabase: async (userId: string) => {
         try {
           const items = get().items;
+          
+          // Get user info from localStorage to set context
+          const storedUser = localStorage.getItem('currentUser');
+          if (storedUser) {
+            try {
+              const user = JSON.parse(storedUser);
+              // Set user context for RLS policies
+              await supabase.rpc('set_user_context', {
+                user_id: user.id,
+                user_role: user.role
+              });
+            } catch (contextError) {
+              console.error('Error setting user context:', contextError);
+            }
+          }
           
           // Clear existing cart items for this user first
           await supabase
@@ -279,6 +299,21 @@ export const useCart = create<CartStore>()(
 
       loadCartFromDatabase: async (userId: string) => {
         try {
+          // Get user info from localStorage to set context
+          const storedUser = localStorage.getItem('currentUser');
+          if (storedUser) {
+            try {
+              const user = JSON.parse(storedUser);
+              // Set user context for RLS policies
+              await supabase.rpc('set_user_context', {
+                user_id: user.id,
+                user_role: user.role
+              });
+            } catch (contextError) {
+              console.error('Error setting user context:', contextError);
+            }
+          }
+
           const { data: cartItems, error } = await supabase
             .from('cart_items')
             .select(`
@@ -331,6 +366,21 @@ export const useCart = create<CartStore>()(
 
       clearCartFromDatabase: async (userId: string) => {
         try {
+          // Get user info from localStorage to set context
+          const storedUser = localStorage.getItem('currentUser');
+          if (storedUser) {
+            try {
+              const user = JSON.parse(storedUser);
+              // Set user context for RLS policies
+              await supabase.rpc('set_user_context', {
+                user_id: user.id,
+                user_role: user.role
+              });
+            } catch (contextError) {
+              console.error('Error setting user context:', contextError);
+            }
+          }
+
           const { error } = await supabase
             .from('cart_items')
             .delete()
@@ -347,6 +397,21 @@ export const useCart = create<CartStore>()(
       syncCartWithDatabase: async (userId: string) => {
         try {
           const localItems = get().items;
+          
+          // Get user info from localStorage to set context
+          const storedUser = localStorage.getItem('currentUser');
+          if (storedUser) {
+            try {
+              const user = JSON.parse(storedUser);
+              // Set user context for RLS policies
+              await supabase.rpc('set_user_context', {
+                user_id: user.id,
+                user_role: user.role
+              });
+            } catch (contextError) {
+              console.error('Error setting user context:', contextError);
+            }
+          }
           
           // Load items from database
           const { data: dbItems, error } = await supabase

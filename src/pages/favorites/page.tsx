@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFavorites } from '../../hooks/useFavorites';
 import { useAuth } from '../../hooks/useAuth';
@@ -9,14 +9,29 @@ import { toast } from 'react-hot-toast';
 
 export default function Favorites() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const { favorites, isLoading, removeFromFavorites, favoritesCount } = useFavorites();
   const { addToCart } = useCart();
   const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated (only after loading is complete)
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/login');
+    }
+  }, [user, authLoading, navigate]);
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
+
+  // Return null if not authenticated (will redirect via useEffect)
   if (!user) {
-    navigate('/login');
     return null;
   }
 

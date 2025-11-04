@@ -338,13 +338,15 @@ export default function Cart() {
                       <span className="font-semibold text-gray-900">{formatPesoSimple(getSubtotal())}</span>
                     </div>
                     
-                    <div className="flex justify-between items-center py-2">
-                      <span className="text-gray-600 flex items-center gap-2">
-                        <i className="ri-truck-line text-orange-500"></i>
-                        Delivery Fee
-                      </span>
-                      <span className="font-semibold text-gray-900">{formatPesoSimple(getDeliveryFee())}</span>
-                    </div>
+                    {!isKioskMode && (
+                      <div className="flex justify-between items-center py-2">
+                        <span className="text-gray-600 flex items-center gap-2">
+                          <i className="ri-truck-line text-orange-500"></i>
+                          Delivery Fee
+                        </span>
+                        <span className="font-semibold text-gray-900">{formatPesoSimple(getDeliveryFee())}</span>
+                      </div>
+                    )}
 
                     <div className="border-t border-gray-200 pt-4">
                       <div className="flex justify-between items-center">

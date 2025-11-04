@@ -87,7 +87,7 @@ export const useKioskOrders = () => {
           items:kiosk_order_items(
             *,
             food_item:food_items(name, image_url),
-            size:size_options(name)
+            size:size_options!size_id(name)
           )
         `)
         .order('created_at', { ascending: false });
@@ -157,7 +157,7 @@ export const useKioskOrders = () => {
           items:kiosk_order_items(
             *,
             food_item:food_items(name, image_url),
-            size:size_options(name)
+            size:size_options!size_id(name)
           )
         `)
         .eq('id', orderResult.id)

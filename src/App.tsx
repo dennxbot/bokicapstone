@@ -6,7 +6,13 @@ import CartNotification from './components/feature/CartNotification'
 
 function App() {
   return (
-    <BrowserRouter basename={__BASE_PATH__}>
+    <BrowserRouter 
+      basename={__BASE_PATH__}
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
       <AppRoutes />
       <CartNotification />
       <Toaster

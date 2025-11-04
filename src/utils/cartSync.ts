@@ -2,6 +2,21 @@ import { useCart } from '../hooks/useCart';
 
 // Track ongoing sync operations to prevent duplicates
 const syncOperations = new Set<string>();
+const clearingOperations = new Set<string>();
+
+// Add function to track cart clearing
+export const setCartClearing = (userId: string, isClearing: boolean) => {
+  if (isClearing) {
+    clearingOperations.add(userId);
+  } else {
+    clearingOperations.delete(userId);
+  }
+};
+
+// Check if cart is being cleared
+export const isCartClearing = (userId: string) => {
+  return clearingOperations.has(userId);
+};
 
 // Utility functions for cart synchronization
 export const syncCartOnLogin = async (userId: string) => {
@@ -17,6 +32,12 @@ export const syncCartOnLogin = async (userId: string) => {
     } catch (error) {
       console.error('Error parsing current user:', error);
     }
+  }
+
+  // Skip if cart is being cleared
+  if (isCartClearing(userId)) {
+    console.log('Cart clearing in progress, skipping sync...');
+    return;
   }
 
   const operationKey = `sync-${userId}`;

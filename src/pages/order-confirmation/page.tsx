@@ -5,6 +5,7 @@ import { formatPesoSimple } from '../../lib/currency';
 import Button from '../../components/base/Button';
 import { useOrders } from '../../hooks/useOrders';
 import { useAuth } from '../../hooks/useAuth';
+import { useKioskAuth } from '../../hooks/useKioskAuth';
 import { supabase } from '../../lib/supabase';
 import BottomNavigation from '../../components/feature/BottomNavigation';
 
@@ -29,6 +30,7 @@ type OrderData = LocalStorageOrder | {
   payment_method: 'cash' | 'card' | 'online';
   status: 'pending' | 'preparing' | 'ready' | 'out_for_delivery' | 'completed' | 'cancelled';
   total_amount: number;
+  delivery_fee: number;
   created_at: string;
   order_items: any[];
 };
@@ -37,6 +39,7 @@ const OrderConfirmation = () => {
   const { id: orderId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isKioskMode } = useKioskAuth();
   const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -226,6 +229,19 @@ const OrderConfirmation = () => {
     } else {
       return order.customer_address || 'No address provided';
     }
+  };
+
+  const getDeliveryFee = (order: OrderData): number => {
+    if (isLocalStorageOrder(order)) {
+      return getOrderType(order) === 'delivery' ? 50 : 0;
+    } else {
+      return order.delivery_fee || 0;
+    }
+  };
+
+  const getSubtotal = (order: OrderData): number => {
+    // Subtract delivery fee from total to get subtotal
+    return getTotalAmount(order) - getDeliveryFee(order);
   };
 
   const formatDate = (dateString: string | undefined): string => {
@@ -459,9 +475,21 @@ const OrderConfirmation = () => {
                   <span className="font-semibold capitalize">{getPaymentMethod(order)}</span>
                 </div>
                 <div className="border-t pt-3 mt-4">
-                  <div className="flex justify-between items-center text-lg font-bold">
-                    <span>Total:</span>
-                    <span className="text-orange-600">₱{getTotalAmount(order).toFixed(2)}</span>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-600">Subtotal:</span>
+                    <span>₱{getSubtotal(order).toFixed(2)}</span>
+                  </div>
+                  {!isKioskMode && (
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-gray-600">Delivery Fee:</span>
+                      <span>{getDeliveryFee(order) > 0 ? `₱${getDeliveryFee(order).toFixed(2)}` : 'Free'}</span>
+                    </div>
+                  )}
+                  <div className="border-t pt-2 mt-2">
+                    <div className="flex justify-between items-center text-lg font-bold">
+                      <span>Total:</span>
+                      <span className="text-orange-600">₱{getTotalAmount(order).toFixed(2)}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -710,10 +738,22 @@ const OrderConfirmation = () => {
               </div>
             );
           })}
-          <div className="border-t pt-2 mt-2">
+          <div className="border-t pt-2 mt-2 space-y-2">
             <div className="flex justify-between items-center">
-              <p className="text-lg font-bold">Total</p>
-              <p className="text-lg font-bold text-orange-600">{formatPesoSimple(getOrderTotal(order))}</p>
+              <p className="text-gray-600">Subtotal:</p>
+              <p className="font-semibold">₱{getSubtotal(order).toFixed(2)}</p>
+            </div>
+            {!isKioskMode && (
+              <div className="flex justify-between items-center">
+                <p className="text-gray-600">Delivery Fee:</p>
+                <p className="font-semibold">{getDeliveryFee(order) > 0 ? `₱${getDeliveryFee(order).toFixed(2)}` : 'Free'}</p>
+              </div>
+            )}
+            <div className="border-t pt-2">
+              <div className="flex justify-between items-center">
+                <p className="text-lg font-bold">Total</p>
+                <p className="text-lg font-bold text-orange-600">₱{getTotalAmount(order).toFixed(2)}</p>
+              </div>
             </div>
           </div>
         </div>
