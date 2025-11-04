@@ -4,6 +4,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import AdminSidebar from '../../../components/feature/AdminSidebar';
 import Button from '../../../components/base/Button';
 import type { SizeOption } from '../../../types';
+import { supabase } from '../../../lib/supabase';
 
 interface SizeFormData {
   name: string;
@@ -27,6 +28,7 @@ export default function AdminSizes() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingSize, setEditingSize] = useState<SizeOption | null>(null);
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [formData, setFormData] = useState<SizeFormData>({
     name: '',
     description: '',
@@ -39,9 +41,49 @@ export default function AdminSizes() {
 
   useEffect(() => {
     if (user?.role === 'admin') {
-      fetchAllSizeOptions();
+      (async () => {
+        await fetchAllSizeOptions();
+        setLastSyncTime(new Date());
+      })();
     }
   }, [user]);
+
+  // Realtime sync for size options
+  useEffect(() => {
+    if (user?.role !== 'admin') return;
+
+    const channel = supabase
+      .channel('size_options_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'size_options' }, async () => {
+        await fetchAllSizeOptions();
+        setLastSyncTime(new Date());
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchAllSizeOptions]);
+
+  // Auto-refresh when page becomes visible
+  useEffect(() => {
+    if (user?.role !== 'admin') return;
+    const handleVisibility = () => {
+      if (!document.hidden) fetchAllSizeOptions();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [user, fetchAllSizeOptions]);
+
+  // Periodic refresh every 5 minutes
+  useEffect(() => {
+    if (user?.role !== 'admin') return;
+    const interval = setInterval(async () => {
+      await fetchAllSizeOptions();
+      setLastSyncTime(new Date());
+    }, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [user, fetchAllSizeOptions]);
 
   const validateForm = (): boolean => {
     const errors: Partial<SizeFormData> = {};
@@ -104,7 +146,8 @@ export default function AdminSizes() {
 
       resetForm();
       setShowForm(false);
-      window.location.reload();
+      await fetchAllSizeOptions();
+      setLastSyncTime(new Date());
     } catch (err) {
       console.error('Error saving size:', err);
     } finally {
@@ -128,7 +171,8 @@ export default function AdminSizes() {
     if (window.confirm(`Are you sure you want to delete the "${size.name}" size? This action cannot be undone.`)) {
       try {
         await deleteSizeOption(size.id);
-        window.location.reload();
+        await fetchAllSizeOptions();
+        setLastSyncTime(new Date());
       } catch (err) {
         console.error('Error deleting size:', err);
       }
@@ -184,6 +228,11 @@ export default function AdminSizes() {
                   Size Management
                 </h1>
                 <p className="text-slate-600 mt-1 font-medium">Create and manage custom sizes with pricing multipliers</p>
+                <div className="text-xs text-gray-500 mt-1">
+                  Last sync: {lastSyncTime 
+                    ? new Date(lastSyncTime).toLocaleTimeString('en-PH', { timeZone: 'Asia/Manila' }) 
+                    : '—'}
+                </div>
               </div>
               
               {/* Size Stats */}
