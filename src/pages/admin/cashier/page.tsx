@@ -370,6 +370,7 @@ const CashierPage: React.FC = () => {
 
   const formatTime = (dateString: string) => {
     return new Date(dateString).toLocaleString('en-PH', {
+      timeZone: 'Asia/Manila',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',

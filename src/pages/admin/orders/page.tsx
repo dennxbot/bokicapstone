@@ -38,6 +38,7 @@ const AdminOrders = () => {
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
+  const [serverTimeOffsetMs, setServerTimeOffsetMs] = useState<number>(0);
 
   useEffect(() => {
     // Wait for auth to load before checking
@@ -120,6 +121,17 @@ const AdminOrders = () => {
     try {
       setLoading(true);
 
+      // Get server time to avoid client clock / timezone drift
+      try {
+        const { data: serverNow } = await supabase.rpc('get_server_time');
+        if (serverNow) {
+          const serverMs = new Date(serverNow as string).getTime();
+          setServerTimeOffsetMs(serverMs - Date.now());
+        }
+      } catch (e) {
+        console.warn('Could not fetch server time; falling back to client clock');
+      }
+
       const { data: ordersData, error } = await supabase
         .from('orders')
         .select(`
@@ -189,9 +201,9 @@ const AdminOrders = () => {
   };
 
   const getTimeAgo = (dateString: string) => {
-    const now = new Date();
-    const date = new Date(dateString);
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    const nowMs = Date.now() + serverTimeOffsetMs; // align with server time
+    const dateMs = new Date(dateString).getTime();
+    const diffInMinutes = Math.floor((nowMs - dateMs) / (1000 * 60));
     
     if (diffInMinutes < 1) return 'Just now';
     if (diffInMinutes < 60) return `${diffInMinutes} min ago`;

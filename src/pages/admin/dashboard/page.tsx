@@ -24,6 +24,7 @@ const AdminDashboard = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [serverTimeOffsetMs, setServerTimeOffsetMs] = useState<number>(0);
 
   useEffect(() => {
     // Wait for auth to load before checking
@@ -107,6 +108,17 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
 
+      // Fetch server time to align relative time calculations with server clock
+      try {
+        const { data: serverNow } = await supabase.rpc('get_server_time');
+        if (serverNow) {
+          const serverMs = new Date(serverNow as string).getTime();
+          setServerTimeOffsetMs(serverMs - Date.now());
+        }
+      } catch (e) {
+        console.warn('Could not fetch server time; using client clock for relative times');
+      }
+
       // Fetch orders data
       const { data: orders, error: ordersError } = await supabase
         .from('orders')
@@ -184,9 +196,9 @@ const AdminDashboard = () => {
   };
 
   const getTimeAgo = (dateString: string) => {
-    const now = new Date();
-    const date = new Date(dateString);
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    const nowMs = Date.now() + serverTimeOffsetMs; // align with server time
+    const dateMs = new Date(dateString).getTime();
+    const diffInMinutes = Math.floor((nowMs - dateMs) / (1000 * 60));
     
     if (diffInMinutes < 1) return 'Just now';
     if (diffInMinutes < 60) return `${diffInMinutes} min ago`;

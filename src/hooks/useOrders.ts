@@ -266,10 +266,24 @@ export const useOrders = () => {
   };
 
   const getTodayStats = () => {
-    const today = new Date().toISOString().split('T')[0];
-    const todayOrders = orders.filter(order => 
-      order.created_at.startsWith(today)
-    );
+    // Use business timezone for day boundaries
+    const timeZone = 'Asia/Manila';
+    const formatDateInTZ = (iso: string) =>
+      new Intl.DateTimeFormat('en-CA', {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(new Date(iso));
+
+    const manilaToday = new Intl.DateTimeFormat('en-CA', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date());
+
+    const todayOrders = orders.filter(order => formatDateInTZ(order.created_at) === manilaToday);
 
     return {
       totalOrders: todayOrders.length,
