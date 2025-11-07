@@ -306,7 +306,7 @@ export default function Checkout() {
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <button
-                onClick={() => navigate('/cart')}
+                onClick={() => navigate(-1)}
                 className="w-12 h-12 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-all duration-300 mr-4 group"
               >
                 <i className="ri-arrow-left-line text-xl group-hover:transform group-hover:-translate-x-1 transition-transform duration-300"></i>
@@ -787,7 +787,7 @@ export default function Checkout() {
                     <span className="bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text">Order Summary</span>
                   </h3>
                   <button 
-                    onClick={() => navigate('/cart')}
+                    onClick={() => navigate(-1)}
                     className="text-xs md:text-sm lg:text-sm xl:text-base text-orange-600 hover:text-orange-700 font-semibold px-3 md:px-4 lg:px-4 xl:px-5 py-1.5 md:py-2 lg:py-2 xl:py-2.5 rounded-xl hover:bg-orange-50 transition-all duration-300 border border-orange-200 hover:border-orange-300 shadow-sm hover:shadow-md flex items-center gap-2"
                   >
                     <i className="ri-edit-line"></i>

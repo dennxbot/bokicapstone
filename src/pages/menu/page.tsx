@@ -10,6 +10,7 @@ import FoodCard from '../../components/feature/FoodCard';
 import BottomNavigation from '../../components/feature/BottomNavigation';
 import BannedUserWarning from '../../components/feature/BannedUserWarning';
 import CategoryTabs from '../../components/feature/CategoryTabs';
+import FloatingCartButton from '../../components/feature/FloatingCartButton';
 import Button from '../../components/base/Button';
 
 type SortOption = 'name' | 'price-low' | 'price-high' | 'featured' | 'newest';
@@ -387,6 +388,9 @@ export default function Menu() {
           </div>
         )}
       </div>
+
+      {/* Floating Cart Button - Visible on all screen sizes */}
+      <FloatingCartButton />
 
       {/* Enhanced Scroll to Top Button */}
       {showScrollTop && (

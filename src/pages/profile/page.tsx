@@ -656,7 +656,10 @@ const Profile = () => {
         </div>
       )}
 
-      <BottomNavigation />
+      {/* Mobile Bottom Navigation */}
+      <div className="lg:hidden">
+        <BottomNavigation />
+      </div>
     </div>
   );
 };

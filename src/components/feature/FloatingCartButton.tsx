@@ -15,7 +15,7 @@ const FloatingCartButton = () => {
   }
 
   const handleCartClick = () => {
-    navigate('/cart');
+    navigate('/cart', { replace: true });
   };
 
   return (

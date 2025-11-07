@@ -400,13 +400,13 @@ export default function Home() {
               </p>
               
               {/* Modal Actions */}
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button
                   onClick={() => {
                     navigate('/menu');
                     closeCategoryModal();
                   }}
-                  className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white"
+                  className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white"
                 >
                   <i className="ri-arrow-right-line mr-2"></i>
                   Explore Category
@@ -414,7 +414,7 @@ export default function Home() {
                 <Button
                   onClick={closeCategoryModal}
                   variant="outline"
-                  className="flex-1"
+                  className="w-full"
                 >
                   Close
                 </Button>
