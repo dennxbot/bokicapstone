@@ -14,7 +14,7 @@ import Button from '../../components/base/Button';
 
 export default function Home() {
   const navigate = useNavigate();
-  const { addToCart } = useCart();
+  const { addToCart, items: cartItems = [] } = useCart();
   const { user, logout } = useAuth();
   const banStatus = useBanStatus();
   const { isKioskMode } = useKioskAuth();
@@ -103,6 +103,38 @@ export default function Home() {
           backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('https://readdy.ai/api/search-image?query=modern%20restaurant%20interior%20with%20warm%20lighting%2C%20elegant%20dining%20atmosphere%2C%20professional%20food%20service%20background%2C%20cozy%20ambiance%20with%20wooden%20tables%20and%20comfortable%20seating&width=1920&height=1080&seq=hero1&orientation=landscape')`
         }}
       >
+        
+        {/* Desktop Icon Navigation - Top Right */}
+        <div className="absolute top-6 right-6 z-20 hidden lg:flex items-center gap-3">
+          {/* Cart Icon */}
+          <button
+            onClick={() => navigate('/cart')}
+            className="group relative bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white p-3 rounded-full transition-all duration-300 hover:scale-110 border border-white/20"
+          >
+            <i className="ri-shopping-cart-line text-xl"></i>
+            {cartItems.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold animate-pulse">
+                {cartItems.length}
+              </span>
+            )}
+          </button>
+          
+          {/* Orders Icon */}
+          <button
+            onClick={() => navigate('/orders')}
+            className="group bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white p-3 rounded-full transition-all duration-300 hover:scale-110 border border-white/20"
+          >
+            <i className="ri-file-list-line text-xl"></i>
+          </button>
+          
+          {/* Profile Icon */}
+          <button
+            onClick={() => navigate('/profile')}
+            className="group bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white p-3 rounded-full transition-all duration-300 hover:scale-110 border border-white/20"
+          >
+            <i className="ri-user-line text-xl"></i>
+          </button>
+        </div>
         {/* Animated background overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-orange-900/80 via-red-900/60 to-orange-900/80 animate-pulse"></div>
         
