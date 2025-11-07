@@ -91,6 +91,17 @@
     }
   }
   
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
   .animate-fadeInUp {
     animation: fadeInUp 0.6s ease-out;
   }
@@ -113,6 +124,10 @@
   
   .animate-pulse-slow {
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out;
   }
   
   /* Custom shadows */
@@ -172,6 +187,39 @@
     
     .custom-scrollbar::-webkit-scrollbar-thumb {
       @apply bg-orange-300 rounded-full hover:bg-orange-400;
+    }
+    
+    /* Order Summary Card Enhancements */
+    .order-summary-card {
+      backdrop-filter: blur(16px);
+      background: rgba(255, 255, 255, 0.98);
+    }
+    
+    .order-summary-card:hover {
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(251, 146, 60, 0.1);
+    }
+    
+    .order-summary-item {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .order-summary-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .price-breakdown {
+      backdrop-filter: blur(8px);
+      background: linear-gradient(135deg, rgba(255, 247, 237, 0.6) 0%, rgba(255, 255, 255, 0.8) 100%);
+    }
+    
+    .total-amount {
+      background: linear-gradient(135deg, rgba(255, 237, 213, 0.8) 0%, rgba(254, 215, 170, 0.6) 100%);
+      border: 1px solid rgba(251, 146, 60, 0.2);
+    }
+    
+    .total-amount .amount {
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
   }
 }

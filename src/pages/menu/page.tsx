@@ -176,6 +176,51 @@ export default function Menu() {
       {/* Enhanced Search and Filter Section */}
       <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b-2 border-orange-200 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+          {/* Corner Controls - Featured First and View Toggle */}
+          <div className="flex justify-end items-center mb-4 sm:mb-6 space-x-3">
+            {/* Featured First Sort */}
+            <div className="relative">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="appearance-none bg-white border-2 border-gray-200 rounded-xl px-4 py-2.5 sm:py-3 pr-10 text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 hover:border-orange-300 cursor-pointer text-sm sm:text-base"
+              >
+                <option value="featured">Featured First</option>
+                <option value="name">Name (A-Z)</option>
+                <option value="price-low">Price (Low to High)</option>
+                <option value="price-high">Price (High to Low)</option>
+                <option value="newest">Newest First</option>
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <i className="ri-arrow-down-s-line text-gray-400"></i>
+              </div>
+            </div>
+
+            {/* View Mode Toggle */}
+            <div className="flex bg-gray-100 rounded-xl p-1">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2.5 sm:p-3 rounded-xl transition-all duration-300 ${
+                  viewMode === 'grid'
+                    ? 'bg-white text-orange-600 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <i className="ri-grid-line text-lg"></i>
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2.5 sm:p-3 rounded-xl transition-all duration-300 ${
+                  viewMode === 'list'
+                    ? 'bg-white text-orange-600 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <i className="ri-list-check text-lg"></i>
+              </button>
+            </div>
+          </div>
+
           {/* Search Bar */}
           <div className="relative mb-4 sm:mb-6">
             <div className="relative max-w-2xl mx-auto">
@@ -211,51 +256,6 @@ export default function Menu() {
                 foodItems={foodItems}
               />
             </div>
-
-            {/* Enhanced Sort and View Controls */}
-            <div className="flex items-center" style={{ gap: '12px' }}>
-              {/* Sort Dropdown */}
-              <div className="relative">
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as SortOption)}
-                  className="appearance-none bg-white border-2 border-gray-200 rounded-xl px-4 py-2.5 sm:py-3 pr-10 text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 hover:border-orange-300 cursor-pointer text-sm sm:text-base"
-                >
-                  <option value="featured">Featured First</option>
-                  <option value="name">Name (A-Z)</option>
-                  <option value="price-low">Price (Low to High)</option>
-                  <option value="price-high">Price (High to Low)</option>
-                  <option value="newest">Newest First</option>
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <i className="ri-arrow-down-s-line text-gray-400"></i>
-                </div>
-              </div>
-
-              {/* View Mode Toggle */}
-              <div className="flex bg-gray-100 rounded-xl p-1">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-2.5 sm:p-3 rounded-xl transition-all duration-300 ${
-                    viewMode === 'grid'
-                      ? 'bg-white text-orange-600 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  <i className="ri-grid-line text-lg"></i>
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`p-2.5 sm:p-3 rounded-xl transition-all duration-300 ${
-                    viewMode === 'list'
-                      ? 'bg-white text-orange-600 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  <i className="ri-list-check text-lg"></i>
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* Active Filters Display */}
@@ -284,7 +284,7 @@ export default function Menu() {
       </div>
 
       {/* Enhanced Results Section */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {/* Results Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8">
           <div>
@@ -317,7 +317,7 @@ export default function Menu() {
         {filteredAndSortedItems.length > 0 ? (
           <div className={`${
             viewMode === 'grid' 
-              ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6' 
+              ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4' 
               : 'space-y-4'
           }`}>
             {filteredAndSortedItems.map((item, index) => (
@@ -398,8 +398,10 @@ export default function Menu() {
         </button>
       )}
 
-      {/* Bottom Navigation - Always show for kiosk mode */}
-      <BottomNavigation />
+      {/* Bottom Navigation - Hidden on desktop, visible on mobile/tablet */}
+      <div className="md:hidden">
+        <BottomNavigation />
+      </div>
     </div>
   );
 }

@@ -240,23 +240,23 @@ const Profile = () => {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-8 relative z-10">
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+      <div className="max-w-5xl mx-auto px-4 py-6 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
           {/* Enhanced Profile Sidebar */}
-          <div className="xl:col-span-1">
-            <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 p-8 sticky top-28 hover:shadow-3xl transition-all duration-500">
+          <div className="lg:col-span-1 xl:col-span-1">
+            <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 p-6 lg:p-8 sticky top-24 hover:shadow-2xl transition-all duration-300">
               {/* Profile Avatar */}
-              <div className="text-center mb-8">
+              <div className="text-center mb-6">
                 <div className="relative inline-block">
-                  <div className="w-28 h-28 bg-gradient-to-br from-orange-400 via-red-500 to-pink-500 rounded-full flex items-center justify-center shadow-2xl ring-4 ring-white/50">
-                    <i className="ri-user-line text-4xl text-white"></i>
+                  <div className="w-24 h-24 lg:w-28 lg:h-28 bg-gradient-to-br from-orange-400 via-red-500 to-pink-500 rounded-full flex items-center justify-center shadow-xl ring-4 ring-white/50">
+                    <i className="ri-user-line text-3xl lg:text-4xl text-white"></i>
                   </div>
-                  <button className="absolute -bottom-2 -right-2 w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full shadow-xl flex items-center justify-center border-3 border-white hover:scale-110 transition-all duration-300 group">
-                    <i className="ri-camera-line text-sm text-white group-hover:scale-110 transition-transform"></i>
+                  <button className="absolute -bottom-2 -right-2 w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full shadow-lg flex items-center justify-center border-3 border-white hover:scale-110 transition-all duration-300 group">
+                    <i className="ri-camera-line text-xs lg:text-sm text-white group-hover:scale-110 transition-transform"></i>
                   </button>
                 </div>
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mt-6 mb-2">{user?.full_name || 'User'}</h2>
-                <p className="text-gray-600 mb-4 font-medium">{user?.email}</p>
+                <h2 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mt-4 lg:mt-6 mb-1 lg:mb-2">{user?.full_name || 'User'}</h2>
+                <p className="text-sm text-gray-600 mb-2 lg:mb-4 font-medium">{user?.email}</p>
                 
                 {/* Role Badge */}
                 {user?.role === 'admin' && (
@@ -274,41 +274,41 @@ const Profile = () => {
               </div>
 
               {/* Navigation Tabs */}
-              <nav className="space-y-3">
+              <nav className="space-y-2">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center px-5 py-4 rounded-xl text-left transition-all duration-300 group ${
+                    className={`w-full flex items-center px-4 py-3 lg:px-5 lg:py-4 rounded-xl text-left transition-all duration-300 group ${
                       activeTab === tab.id
-                        ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-xl transform scale-105'
-                        : 'text-gray-700 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:shadow-lg hover:scale-102'
+                        ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg transform scale-105'
+                        : 'text-gray-700 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:shadow-md hover:scale-102'
                     }`}
                   >
-                    <i className={`${tab.icon} text-xl mr-4 ${activeTab === tab.id ? 'text-white' : 'text-orange-500 group-hover:text-orange-600'} transition-colors`}></i>
-                    <span className="font-semibold">{tab.label}</span>
+                    <i className={`${tab.icon} text-lg lg:text-xl mr-3 lg:mr-4 ${activeTab === tab.id ? 'text-white' : 'text-orange-500 group-hover:text-orange-600'} transition-colors`}></i>
+                    <span className="font-semibold text-sm lg:text-base">{tab.label}</span>
                   </button>
                 ))}
               </nav>
 
               {/* Quick Actions */}
-              <div className="mt-8 pt-6 border-t border-gradient-to-r from-orange-200/30 to-red-200/30">
-                <div className="space-y-3">
+              <div className="mt-6 pt-4 border-t border-gradient-to-r from-orange-200/30 to-red-200/30">
+                <div className="space-y-2">
                   <button
                     onClick={() => navigate('/orders')}
-                    className="w-full flex items-center px-5 py-3 text-gray-700 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:text-orange-600 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-102 group"
+                    className="w-full flex items-center px-4 py-2 lg:px-5 lg:py-3 text-gray-700 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:text-orange-600 rounded-xl transition-all duration-300 hover:shadow-md hover:scale-102 group"
                   >
-                    <i className="ri-shopping-bag-line text-xl mr-4 text-orange-500 group-hover:text-orange-600 transition-colors"></i>
-                    <span className="font-semibold">My Orders</span>
+                    <i className="ri-shopping-bag-line text-lg lg:text-xl mr-3 lg:mr-4 text-orange-500 group-hover:text-orange-600 transition-colors"></i>
+                    <span className="font-semibold text-sm lg:text-base">My Orders</span>
                   </button>
                   
                   {user?.role === 'admin' && (
                     <button
                       onClick={() => navigate('/admin')}
-                      className="w-full flex items-center px-5 py-3 text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:text-blue-600 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-102 group"
+                      className="w-full flex items-center px-4 py-2 lg:px-5 lg:py-3 text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:text-blue-600 rounded-xl transition-all duration-300 hover:shadow-md hover:scale-102 group"
                     >
-                      <i className="ri-dashboard-line text-xl mr-4 text-blue-500 group-hover:text-blue-600 transition-colors"></i>
-                      <span className="font-semibold">Admin Panel</span>
+                      <i className="ri-dashboard-line text-lg lg:text-xl mr-3 lg:mr-4 text-blue-500 group-hover:text-blue-600 transition-colors"></i>
+                      <span className="font-semibold text-sm lg:text-base">Admin Panel</span>
                     </button>
                   )}
                 </div>
@@ -317,31 +317,31 @@ const Profile = () => {
           </div>
 
           {/* Enhanced Main Content */}
-          <div className="xl:col-span-3">
+          <div className="lg:col-span-2 xl:col-span-3">
             {/* Personal Information Tab */}
             {activeTab === 'personal' && (
-              <div className="space-y-8">
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 p-8 hover:shadow-2xl transition-all duration-300">
-                  <div className="flex justify-between items-center mb-8">
-                    <h3 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent flex items-center">
-                      <i className="ri-user-settings-line text-orange-500 mr-3 text-2xl"></i>
+              <div className="space-y-6">
+                <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 p-6 lg:p-8 hover:shadow-xl transition-all duration-300">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent flex items-center">
+                      <i className="ri-user-settings-line text-orange-500 mr-2 lg:mr-3 text-xl lg:text-2xl"></i>
                       Personal Information
                     </h3>
                     <button
                       onClick={() => setIsEditing(!isEditing)}
-                      className={`flex items-center px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 ${
+                      className={`flex items-center px-4 py-2 lg:px-6 lg:py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 ${
                         isEditing
-                          ? 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:from-gray-200 hover:to-gray-300 shadow-lg'
-                          : 'bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600 shadow-xl'
+                          ? 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:from-gray-200 hover:to-gray-300 shadow-md'
+                          : 'bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600 shadow-lg'
                       }`}
                       disabled={isLoading}
                     >
-                      <i className={`${isEditing ? 'ri-close-line' : 'ri-edit-line'} text-lg mr-2`}></i>
+                      <i className={`${isEditing ? 'ri-close-line' : 'ri-edit-line'} text-base lg:text-lg mr-2`}></i>
                       {isEditing ? 'Cancel' : 'Edit'}
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <Input
                         label="Full Name"
@@ -381,20 +381,20 @@ const Profile = () => {
                   </div>
 
                   {isEditing && (
-                    <div className="mt-8 flex flex-col sm:flex-row gap-4">
+                    <div className="mt-6 flex flex-col sm:flex-row gap-3">
                       <Button
                         onClick={handleSave}
                         disabled={isLoading}
-                        className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white py-4 rounded-xl font-bold shadow-xl disabled:opacity-50 transition-all duration-300 hover:scale-105"
+                        className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white py-3 rounded-xl font-bold shadow-lg disabled:opacity-50 transition-all duration-300 hover:scale-105"
                       >
-                        <i className={`${isLoading ? 'ri-loader-4-line animate-spin' : 'ri-save-line'} mr-2 text-lg`}></i>
+                        <i className={`${isLoading ? 'ri-loader-4-line animate-spin' : 'ri-save-line'} mr-2 text-base`}></i>
                         {isLoading ? 'Saving...' : 'Save Changes'}
                       </Button>
                       <Button
                         onClick={() => setIsEditing(false)}
                         variant="outline"
                         disabled={isLoading}
-                        className="flex-1 border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 py-4 rounded-xl font-bold disabled:opacity-50 transition-all duration-300 hover:scale-105"
+                        className="flex-1 border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 py-3 rounded-xl font-bold disabled:opacity-50 transition-all duration-300 hover:scale-105"
                       >
                         Cancel
                       </Button>
@@ -403,29 +403,29 @@ const Profile = () => {
                 </div>
 
                 {/* Account Statistics */}
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 p-8 hover:shadow-2xl transition-all duration-300">
-                  <h3 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-8 flex items-center">
-                    <i className="ri-bar-chart-line text-orange-500 mr-3 text-2xl"></i>
+                <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 p-6 lg:p-8 hover:shadow-xl transition-all duration-300">
+                  <h3 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-6 flex items-center">
+                    <i className="ri-bar-chart-line text-orange-500 mr-2 lg:mr-3 text-xl lg:text-2xl"></i>
                     Account Statistics
                   </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                    <div className="text-center p-6 bg-gradient-to-br from-orange-50 to-red-50 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                      <div className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">12</div>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+                    <div className="text-center p-4 lg:p-6 bg-gradient-to-br from-orange-50 to-red-50 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105">
+                      <div className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">12</div>
                       <div className="text-sm font-medium text-gray-600">Total Orders</div>
                     </div>
-                    <div className="text-center p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                      <div className="text-3xl font-bold bg-gradient-to-r from-green-500 to-emerald-500 bg-clip-text text-transparent">₱2,450</div>
+                    <div className="text-center p-4 lg:p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105">
+                      <div className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-green-500 to-emerald-500 bg-clip-text text-transparent">₱2,450</div>
                       <div className="text-sm font-medium text-gray-600">Total Spent</div>
                     </div>
                     <button
                       onClick={() => navigate('/favorites')}
-                      className="text-center p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-200/50"
+                      className="text-center p-4 lg:p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-200/50"
                     >
-                      <div className="text-3xl font-bold bg-gradient-to-r from-blue-500 to-indigo-500 bg-clip-text text-transparent">{favoritesCount}</div>
+                      <div className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-500 to-indigo-500 bg-clip-text text-transparent">{favoritesCount}</div>
                       <div className="text-sm font-medium text-gray-600">Favorites</div>
                     </button>
-                    <div className="text-center p-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                      <div className="text-3xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">Gold</div>
+                    <div className="text-center p-4 lg:p-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105">
+                      <div className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">Gold</div>
                       <div className="text-sm font-medium text-gray-600">Member Status</div>
                     </div>
                   </div>
@@ -435,9 +435,9 @@ const Profile = () => {
 
             {/* Addresses Tab */}
             {activeTab === 'addresses' && (
-              <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 p-8 hover:shadow-2xl transition-all duration-300">
-                <h3 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-8 flex items-center">
-                  <i className="ri-map-pin-line text-orange-500 mr-3 text-2xl"></i>
+              <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 p-6 lg:p-8 hover:shadow-xl transition-all duration-300">
+                <h3 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-6 flex items-center">
+                  <i className="ri-map-pin-line text-orange-500 mr-2 lg:mr-3 text-xl lg:text-2xl"></i>
                   Delivery Addresses
                 </h3>
                 <AddressManager />
@@ -446,21 +446,21 @@ const Profile = () => {
 
             {/* Preferences Tab */}
             {activeTab === 'preferences' && (
-              <div className="space-y-8">
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 p-8 hover:shadow-2xl transition-all duration-300">
-                  <h3 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-8 flex items-center">
-                    <i className="ri-notification-line text-orange-500 mr-3 text-2xl"></i>
+              <div className="space-y-6">
+                <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 p-6 lg:p-8 hover:shadow-xl transition-all duration-300">
+                  <h3 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-6 flex items-center">
+                    <i className="ri-notification-line text-orange-500 mr-2 lg:mr-3 text-xl lg:text-2xl"></i>
                     Notification Preferences
                   </h3>
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     {[
                       { key: 'notifications', label: 'Push Notifications', desc: 'Receive notifications about order updates' },
                       { key: 'emailUpdates', label: 'Email Updates', desc: 'Get promotional emails and order confirmations' },
                       { key: 'smsUpdates', label: 'SMS Updates', desc: 'Receive SMS notifications for important updates' }
                     ].map((pref) => (
-                      <div key={pref.key} className="flex items-center justify-between p-6 rounded-xl bg-gradient-to-r from-gray-50/80 to-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-102">
+                      <div key={pref.key} className="flex items-center justify-between p-4 lg:p-6 rounded-xl bg-gradient-to-r from-gray-50/80 to-white/80 backdrop-blur-sm shadow-md hover:shadow-lg transition-all duration-300 hover:scale-102">
                         <div>
-                          <span className="font-bold text-gray-800 block text-lg">{pref.label}</span>
+                          <span className="font-bold text-gray-800 block text-base lg:text-lg">{pref.label}</span>
                           <span className="text-sm text-gray-600 font-medium">{pref.desc}</span>
                         </div>
                         <button
@@ -478,9 +478,9 @@ const Profile = () => {
                   </div>
                 </div>
 
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 p-8 hover:shadow-2xl transition-all duration-300">
-                  <h3 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-8 flex items-center">
-                    <i className="ri-palette-line text-orange-500 mr-3 text-2xl"></i>
+                <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 p-6 lg:p-8 hover:shadow-xl transition-all duration-300">
+                  <h3 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-6 flex items-center">
+                    <i className="ri-palette-line text-orange-500 mr-2 lg:mr-3 text-xl lg:text-2xl"></i>
                     Display Preferences
                   </h3>
                   <div className="space-y-6">
@@ -524,39 +524,39 @@ const Profile = () => {
             {/* Security Tab */}
             {activeTab === 'security' && (
               <div className="space-y-8">
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 p-8 hover:shadow-2xl transition-all duration-300">
-                  <h3 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-8 flex items-center">
-                    <i className="ri-shield-check-line text-orange-500 mr-3 text-2xl"></i>
+                <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 p-6 lg:p-8 hover:shadow-xl transition-all duration-300">
+                  <h3 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-6 flex items-center">
+                    <i className="ri-shield-check-line text-orange-500 mr-2 lg:mr-3 text-xl lg:text-2xl"></i>
                     Security Settings
                   </h3>
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     <button
                       onClick={() => setShowPasswordModal(true)}
-                      className="w-full flex items-center justify-between p-6 rounded-xl border-2 border-gray-200 hover:border-orange-300 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 transition-all duration-300 group hover:shadow-xl hover:scale-102"
+                      className="w-full flex items-center justify-between p-4 lg:p-6 rounded-xl border-2 border-gray-200 hover:border-orange-300 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 transition-all duration-300 group hover:shadow-lg hover:scale-102"
                     >
                       <div className="flex items-center">
-                        <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-red-100 rounded-xl flex items-center justify-center mr-4 group-hover:from-orange-200 group-hover:to-red-200 transition-all duration-300 shadow-lg">
-                          <i className="ri-lock-line text-xl text-orange-600"></i>
+                        <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-orange-100 to-red-100 rounded-xl flex items-center justify-center mr-3 lg:mr-4 group-hover:from-orange-200 group-hover:to-red-200 transition-all duration-300 shadow-md">
+                          <i className="ri-lock-line text-lg lg:text-xl text-orange-600"></i>
                         </div>
                         <div className="text-left">
-                          <span className="font-bold text-gray-800 block text-lg">Change Password</span>
+                          <span className="font-bold text-gray-800 block text-base lg:text-lg">Change Password</span>
                           <span className="text-sm text-gray-600 font-medium">Update your account password</span>
                         </div>
                       </div>
-                      <i className="ri-arrow-right-s-line text-xl text-gray-400 group-hover:text-orange-600 transition-colors duration-300"></i>
+                      <i className="ri-arrow-right-s-line text-lg lg:text-xl text-gray-400 group-hover:text-orange-600 transition-colors duration-300"></i>
                     </button>
 
-                    <div className="flex items-center justify-between p-6 rounded-xl bg-gradient-to-r from-green-50/80 to-emerald-50/80 backdrop-blur-sm shadow-lg">
+                    <div className="flex items-center justify-between p-4 lg:p-6 rounded-xl bg-gradient-to-r from-green-50/80 to-emerald-50/80 backdrop-blur-sm shadow-md">
                       <div className="flex items-center">
-                        <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-emerald-100 rounded-xl flex items-center justify-center mr-4 shadow-lg">
-                          <i className="ri-shield-check-line text-xl text-green-600"></i>
+                        <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-green-100 to-emerald-100 rounded-xl flex items-center justify-center mr-3 lg:mr-4 shadow-md">
+                          <i className="ri-shield-check-line text-lg lg:text-xl text-green-600"></i>
                         </div>
                         <div>
                           <span className="font-medium text-gray-800 block">Two-Factor Authentication</span>
                           <span className="text-sm text-gray-600">Add an extra layer of security</span>
                         </div>
                       </div>
-                      <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
+                      <span className="px-2 py-1 lg:px-3 lg:py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
                         Enabled
                       </span>
                     </div>
@@ -577,14 +577,14 @@ const Profile = () => {
                 </div>
 
                 {/* Logout Section */}
-                <div className="bg-white rounded-xl shadow-sm p-6">
-                  <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                <div className="bg-white rounded-xl shadow-sm p-4 lg:p-6">
+                  <h3 className="text-lg lg:text-xl font-semibold text-gray-800 mb-4 lg:mb-6 flex items-center">
                     <i className="ri-logout-box-line text-red-600 mr-2"></i>
                     Account Actions
                   </h3>
                   <Button
                     onClick={handleLogout}
-                    className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white py-4 rounded-xl font-semibold shadow-lg transition-all"
+                    className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white py-3 lg:py-4 rounded-xl font-semibold shadow-md lg:shadow-lg transition-all"
                   >
                     <i className="ri-logout-box-line mr-2"></i>
                     Logout from Account
@@ -599,18 +599,18 @@ const Profile = () => {
       {/* Password Change Modal */}
       {showPasswordModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-800">Change Password</h3>
+          <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-4 lg:p-6">
+            <div className="flex items-center justify-between mb-4 lg:mb-6">
+              <h3 className="text-lg lg:text-xl font-semibold text-gray-800">Change Password</h3>
               <button
                 onClick={() => setShowPasswordModal(false)}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
-                <i className="ri-close-line text-xl text-gray-600"></i>
+                <i className="ri-close-line text-lg lg:text-xl text-gray-600"></i>
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3 lg:space-y-4">
               <Input
                 label="Current Password"
                 name="currentPassword"
@@ -637,17 +637,17 @@ const Profile = () => {
               />
             </div>
 
-            <div className="flex gap-3 mt-6">
+            <div className="flex gap-2 lg:gap-3 mt-4 lg:mt-6">
               <Button
                 onClick={handlePasswordUpdate}
-                className="flex-1 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white py-3 rounded-lg font-semibold shadow-lg transition-all"
+                className="flex-1 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white py-2 lg:py-3 rounded-lg font-semibold shadow-md lg:shadow-lg transition-all"
               >
                 Update Password
               </Button>
               <Button
                 onClick={() => setShowPasswordModal(false)}
                 variant="outline"
-                className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50 py-3 rounded-lg font-semibold transition-all"
+                className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50 py-2 lg:py-3 rounded-lg font-semibold transition-all"
               >
                 Cancel
               </Button>

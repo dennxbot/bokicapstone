@@ -302,7 +302,7 @@ export default function Checkout() {
       
       {/* Enhanced Header */}
       <div className="bg-gradient-to-r from-orange-500 via-red-500 to-orange-600 text-white relative z-10">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <button
@@ -327,11 +327,11 @@ export default function Checkout() {
       </div>
 
       {/* Main Container with Mobile-First Layout */}
-      <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 py-8">
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-8">
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Left Column - Stepper + Form (Mobile: full width, Tablet: 2/3) */}
-          <div className="md:col-span-2 order-2 md:order-1">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {/* Left Column - Stepper + Form (Mobile: full width, Desktop: 3/5) */}
+          <div className="lg:col-span-3 order-2 lg:order-1">
             {/* Premium Progress Stepper - Optimized for Mobile/Tablet */}
             <div className="mb-8">
               <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl shadow-orange-100/50 border border-white/60 px-4 sm:px-8 py-4 sm:py-6">
@@ -712,12 +712,12 @@ export default function Checkout() {
               {/* Premium Background Accent */}
               <div className="absolute inset-0 bg-gradient-to-r from-orange-50/30 via-transparent to-red-50/30"></div>
               
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 relative z-10">
+              <div className="flex flex-col lg:flex-row items-center justify-center gap-4 lg:gap-6 relative z-10">
                 <Button
                   onClick={handlePrevStep}
                   variant="outline"
                   disabled={currentStep === 1}
-                  className={`w-full sm:w-auto flex items-center justify-center gap-3 px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold transition-all duration-300 shadow-lg ${
+                  className={`w-full lg:w-auto flex items-center justify-center gap-3 px-6 lg:px-8 py-3 lg:py-4 rounded-xl font-semibold transition-all duration-300 shadow-lg ${
                     currentStep === 1 
                       ? 'border-2 border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50/50' 
                       : 'border-2 border-gray-300 text-gray-700 hover:bg-white hover:border-gray-400 hover:shadow-xl shadow-gray-200/50'
@@ -727,8 +727,8 @@ export default function Checkout() {
                   Previous
                 </Button>
                 
-                <div className="flex items-center gap-3 text-sm font-semibold text-gray-600 order-first sm:order-none bg-white/80 px-4 sm:px-6 py-2 sm:py-3 rounded-xl shadow-lg border border-gray-200/50 bg-gradient-to-r from-orange-50 to-red-50">
-                  <div className="w-2 h-2 sm:w-3 sm:h-3 bg-gradient-to-r from-orange-500 to-red-500 rounded-full animate-pulse"></div>
+                <div className="flex items-center gap-3 text-sm font-semibold text-gray-600 bg-white/80 px-4 lg:px-6 py-2 lg:py-3 rounded-xl shadow-lg border border-gray-200/50 bg-gradient-to-r from-orange-50 to-red-50">
+                  <div className="w-2 h-2 lg:w-3 lg:h-3 bg-gradient-to-r from-orange-500 to-red-500 rounded-full animate-pulse"></div>
                   <span className="font-bold">Step {currentStep} of {steps.length}</span>
                   <span className="text-xs text-gray-500 ml-1">• {steps.find(s => s.id === currentStep)?.title}</span>
                 </div>
@@ -737,7 +737,7 @@ export default function Checkout() {
                   <Button
                     onClick={handleNextStep}
                     disabled={isNextButtonDisabled()}
-                    className={`w-full sm:w-auto flex items-center justify-center gap-3 px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold transition-all duration-300 shadow-xl ${
+                    className={`w-full lg:w-auto flex items-center justify-center gap-3 px-6 lg:px-8 py-3 lg:py-4 rounded-xl font-semibold transition-all duration-300 shadow-xl ${
                       isNextButtonDisabled()
                         ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-gray-200/50'
                         : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-orange-300/50 hover:shadow-orange-400/50 hover:scale-105'
@@ -750,7 +750,7 @@ export default function Checkout() {
                   <Button
                     onClick={handlePlaceOrder}
                     disabled={isSubmitting}
-                    className="w-full sm:w-auto flex items-center justify-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-8 sm:px-10 py-3 sm:py-4 font-bold rounded-xl transition-all duration-300 shadow-xl shadow-green-300/50 hover:shadow-green-400/50 hover:scale-105"
+                    className="w-full lg:w-auto flex items-center justify-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-8 lg:px-10 py-3 lg:py-4 font-bold rounded-xl transition-all duration-300 shadow-xl shadow-green-300/50 hover:shadow-green-400/50 hover:scale-105"
                   >
                     {isSubmitting ? (
                       <>
@@ -771,66 +771,70 @@ export default function Checkout() {
           </div>
         </div>
 
-          {/* Right Column - Premium Order Summary (Mobile: full width, Tablet: 1/3) */}
-          <div className="md:col-span-1 order-1 md:order-2">
-            <div className="md:sticky md:top-6">
-              <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl shadow-gray-200/50 border border-white/70 p-4 sm:p-8 relative overflow-hidden">
+          {/* Right Column - Premium Order Summary (Mobile: full width, Desktop: 2/5) */}
+          <div className="lg:col-span-2 order-1 lg:order-2">
+            <div className="lg:sticky lg:top-6 xl:sticky xl:top-8">
+              <div className="order-summary-card bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl shadow-gray-200/50 border border-white/70 p-4 sm:p-6 md:p-6 lg:p-8 xl:p-8 relative overflow-hidden">
                 {/* Premium Background Accent */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-orange-100/50 to-transparent rounded-full blur-2xl"></div>
                 
-                <div className="flex items-center justify-between mb-6 sm:mb-8 relative z-10">
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-3">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-orange-100 to-red-100 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-200/50 border border-orange-200/50">
-                      <i className="ri-shopping-bag-line text-orange-600 text-base sm:text-lg"></i>
+                {/* Header Section */}
+                <div className="flex items-center justify-between mb-6 md:mb-8 lg:mb-8 relative z-10">
+                  <h3 className="text-lg md:text-xl lg:text-xl xl:text-2xl font-bold text-gray-900 flex items-center gap-3">
+                    <div className="w-8 h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 xl:w-12 xl:h-12 bg-gradient-to-br from-orange-100 to-red-100 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-200/50 border border-orange-200/50">
+                      <i className="ri-shopping-bag-line text-orange-600 text-base md:text-lg lg:text-lg xl:text-xl"></i>
                     </div>
-                    Order Summary
+                    <span className="bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text">Order Summary</span>
                   </h3>
                   <button 
                     onClick={() => navigate('/cart')}
-                    className="text-xs sm:text-sm text-orange-600 hover:text-orange-700 font-semibold px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl hover:bg-orange-50 transition-all duration-300 border border-orange-200 hover:border-orange-300 shadow-sm hover:shadow-md"
+                    className="text-xs md:text-sm lg:text-sm xl:text-base text-orange-600 hover:text-orange-700 font-semibold px-3 md:px-4 lg:px-4 xl:px-5 py-1.5 md:py-2 lg:py-2 xl:py-2.5 rounded-xl hover:bg-orange-50 transition-all duration-300 border border-orange-200 hover:border-orange-300 shadow-sm hover:shadow-md flex items-center gap-2"
                   >
+                    <i className="ri-edit-line"></i>
                     Edit Cart
                   </button>
                 </div>
               
-              <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
-                {cartItems.map((item: CartItemWithSize, index: number) => (
-                  <div key={`cart-item-${item.id}-${item.size_option_id || 'default'}-${index}`} className="group flex items-start gap-3 sm:gap-4 p-3 sm:p-4 bg-gradient-to-r from-white to-gray-50/50 rounded-xl border border-gray-100 hover:border-orange-200 hover:shadow-lg transition-all duration-300">
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-orange-100 via-orange-50 to-red-100 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg group-hover:shadow-xl transition-all duration-300">
-                      <i className="ri-restaurant-line text-lg sm:text-xl text-orange-600 group-hover:scale-110 transition-transform duration-300"></i>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-gray-900 truncate text-sm sm:text-base">{item.name}</h4>
-                      {item.selected_size && (
-                        <p className="text-xs sm:text-sm text-gray-600 mt-1 font-medium">Size: {item.selected_size.name}</p>
-                      )}
-                      <div className="flex items-center justify-between mt-2 sm:mt-3">
-                        <span className="text-xs sm:text-sm font-semibold text-gray-600 bg-gray-100 px-2 sm:px-3 py-1 rounded-full">Qty: {item.quantity}</span>
-                        <span className="font-bold text-base sm:text-lg bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">{formatPesoSimple(item.price * item.quantity)}</span>
+                {/* Cart Items Section */}
+                <div className="space-y-3 md:space-y-4 lg:space-y-4 mb-6 md:mb-8 lg:mb-8">
+                  {cartItems.map((item: CartItemWithSize, index: number) => (
+                    <div key={`cart-item-${item.id}-${item.size_option_id || 'default'}-${index}`} className="order-summary-item group flex items-start gap-3 md:gap-4 p-3 md:p-4 bg-gradient-to-r from-white to-gray-50/50 rounded-xl border border-gray-100 hover:border-orange-200 hover:shadow-lg transition-all duration-300">
+                      <div className="w-12 h-12 md:w-14 md:h-14 lg:w-14 lg:h-14 xl:w-16 xl:h-16 bg-gradient-to-br from-orange-100 via-orange-50 to-red-100 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg group-hover:shadow-xl transition-all duration-300">
+                        <i className="ri-restaurant-line text-lg md:text-xl lg:text-xl xl:text-2xl text-orange-600 group-hover:scale-110 transition-transform duration-300"></i>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-gray-900 truncate text-sm md:text-base lg:text-base xl:text-lg">{item.name}</h4>
+                        {item.selected_size && (
+                          <p className="text-xs md:text-sm lg:text-sm xl:text-base text-gray-600 mt-1 font-medium">Size: {item.selected_size.name}</p>
+                        )}
+                        <div className="flex items-center justify-between mt-2 md:mt-3">
+                          <span className="text-xs md:text-sm lg:text-sm xl:text-base font-semibold text-gray-600 bg-gray-100 px-2 md:px-3 py-1 rounded-full">Qty: {item.quantity}</span>
+                          <span className="font-bold text-base md:text-lg lg:text-lg xl:text-xl bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">{formatPesoSimple(item.price * item.quantity)}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
 
-              <div className="border-t border-gradient-to-r from-orange-100 via-gray-200 to-red-100 pt-4 sm:pt-6 space-y-3 sm:space-y-4 bg-gradient-to-r from-gray-50/30 to-white/30 p-4 sm:p-6 rounded-xl">
-                <div className="flex justify-between items-center text-gray-700 font-semibold">
-                  <span className="text-sm sm:text-base">Subtotal</span>
-                  <span className="text-base sm:text-lg">{formatPesoSimple(getTotalPrice())}</span>
-                </div>
-                {!isKioskMode && (
+                {/* Pricing Summary Section */}
+                <div className="price-breakdown border-t border-gradient-to-r from-orange-100 via-gray-200 to-red-100 pt-4 md:pt-6 lg:pt-6 space-y-3 md:space-y-4 lg:space-y-4 bg-gradient-to-r from-gray-50/30 to-white/30 p-4 md:p-6 lg:p-6 rounded-xl">
                   <div className="flex justify-between items-center text-gray-700 font-semibold">
-                    <span className="text-sm sm:text-base">Delivery Fee</span>
-                    <span className="text-base sm:text-lg">{deliveryFee > 0 ? formatPesoSimple(deliveryFee) : <span className="text-green-600 font-bold">Free</span>}</span>
+                    <span className="text-sm md:text-base lg:text-base xl:text-lg">Subtotal</span>
+                    <span className="text-base md:text-lg lg:text-lg xl:text-xl">{formatPesoSimple(getTotalPrice())}</span>
                   </div>
-                )}
-                <div className="flex justify-between items-center border-t border-gray-200 pt-3 sm:pt-4 bg-gradient-to-r from-orange-50/50 to-red-50/50 p-3 sm:p-4 rounded-xl shadow-inner">
-                  <span className="text-lg sm:text-xl font-bold text-gray-900">Total</span>
-                  <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent drop-shadow-sm">
-                    {formatPesoSimple(totalAmount)}
-                  </span>
+                  {!isKioskMode && (
+                    <div className="flex justify-between items-center text-gray-700 font-semibold">
+                      <span className="text-sm md:text-base lg:text-base xl:text-lg">Delivery Fee</span>
+                      <span className="text-base md:text-lg lg:text-lg xl:text-xl">{deliveryFee > 0 ? formatPesoSimple(deliveryFee) : <span className="text-green-600 font-bold">Free</span>}</span>
+                    </div>
+                  )}
+                  <div className="total-amount flex justify-between items-center border-t border-gray-200 pt-3 md:pt-4 bg-gradient-to-r from-orange-50/50 to-red-50/50 p-3 md:p-4 rounded-xl shadow-inner">
+                    <span className="text-lg md:text-xl lg:text-xl xl:text-2xl font-bold text-gray-900">Total</span>
+                    <span className="text-xl md:text-2xl lg:text-2xl xl:text-3xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent drop-shadow-sm">
+                      {formatPesoSimple(totalAmount)}
+                    </span>
+                  </div>
                 </div>
-              </div>
               </div>
             </div>
           </div>

@@ -51,6 +51,7 @@ const AdminReports = () => {
   const navigate = useNavigate();
   const { isLoading, isAuthenticated, isAdmin } = useAuth();
   const [dateRange, setDateRange] = useState('today');
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'online' | 'kiosk'>('all');
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [ordersData, setOrdersData] = useState<OrderData[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
@@ -68,7 +69,7 @@ const AdminReports = () => {
     }
 
     fetchReportData();
-  }, [isAuthenticated, isAdmin, isLoading, navigate, dateRange]);
+  }, [isAuthenticated, isAdmin, isLoading, navigate, dateRange, sourceFilter]);
 
   // Close export options when clicking outside
   useEffect(() => {
@@ -121,37 +122,93 @@ const AdminReports = () => {
       setIsLoadingData(true);
       const { start, end } = getDateRange();
 
-      // Fetch orders within date range
-      const { data: orders, error: ordersError } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          order_items (
+      // Fetch online orders when needed
+      let onlineOrders: any[] = [];
+      if (sourceFilter === 'all' || sourceFilter === 'online') {
+        const { data, error } = await supabase
+          .from('orders')
+          .select(`
             *,
-            food_items (
-              name
+            order_items (
+              *,
+              food_items (
+                name
+              )
             )
-          )
-        `)
-        .gte('created_at', start)
-        .lt('created_at', end);
+          `)
+          .gte('created_at', start)
+          .lt('created_at', end);
+        if (error) throw error;
+        onlineOrders = data || [];
+      }
 
-      if (ordersError) throw ordersError;
+      // Fetch kiosk orders when needed
+      let kioskOrders: any[] = [];
+      if (sourceFilter === 'all' || sourceFilter === 'kiosk') {
+        const { data, error } = await supabase
+          .from('kiosk_orders')
+          .select(`
+            *,
+            items:kiosk_order_items (
+              quantity,
+              total_price,
+              food_items ( name ),
+              size:size_options ( name )
+            )
+          `)
+          .gte('created_at', start)
+          .lt('created_at', end);
+        if (error) throw error;
+        kioskOrders = data || [];
+      }
+
+      // Normalize kiosk orders to OrderData shape
+      const normalizedKiosk: OrderData[] = kioskOrders.map((ko: any) => ({
+        id: ko.id,
+        created_at: ko.created_at,
+        total_amount: parseFloat(ko.total_amount) || 0,
+        status: ko.status, // kiosk status values; treated same for counts except missing some statuses
+        order_type: 'pickup',
+        payment_method: (ko.payment_method as 'cash' | 'card' | 'online') || 'cash',
+        order_items: (ko.items || []).map((it: any) => ({
+          quantity: it.quantity,
+          size_name: it?.size?.name,
+          food_items: {
+            name: it?.food_items?.name || 'Unknown Item'
+          },
+          // add total_price for item revenue
+          total_price: parseFloat(it.total_price) || 0,
+        }))
+      }));
+
+      // Online orders already match shape but ensure item total_price exists
+      const normalizedOnline: OrderData[] = onlineOrders.map((o: any) => ({
+        ...o,
+        order_items: (o.order_items || []).map((it: any) => ({
+          ...it,
+          total_price: parseFloat(it.total_price) || (parseFloat(it.unit_price) * (it.quantity || 1)) || 0,
+        }))
+      }));
+
+      const allOrders: OrderData[] =
+        sourceFilter === 'online' ? normalizedOnline :
+        sourceFilter === 'kiosk' ? normalizedKiosk :
+        [...normalizedOnline, ...normalizedKiosk];
 
       // Calculate basic metrics - exclude cancelled orders from sales
-      const nonCancelledOrders = orders?.filter(order => order.status !== 'cancelled') || [];
-      const totalOrders = orders?.length || 0;
-      const totalSales = nonCancelledOrders.reduce((sum, order) => sum + order.total_amount, 0) || 0;
+      const nonCancelledOrders = allOrders.filter(order => order.status !== 'cancelled');
+      const totalOrders = allOrders.length;
+      const totalSales = nonCancelledOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
       const avgOrderValue = nonCancelledOrders.length > 0 ? totalSales / nonCancelledOrders.length : 0;
 
       // Calculate orders by status
       const ordersByStatus = {
-        pending: orders?.filter(o => o.status === 'pending').length || 0,
-        preparing: orders?.filter(o => o.status === 'preparing').length || 0,
-        ready: orders?.filter(o => o.status === 'ready').length || 0,
-        out_for_delivery: orders?.filter(o => o.status === 'out_for_delivery').length || 0,
-        completed: orders?.filter(o => o.status === 'completed').length || 0,
-        cancelled: orders?.filter(o => o.status === 'cancelled').length || 0,
+        pending: allOrders.filter(o => o.status === 'pending').length || 0,
+        preparing: allOrders.filter(o => o.status === 'preparing').length || 0,
+        ready: allOrders.filter(o => o.status === 'ready').length || 0,
+        out_for_delivery: allOrders.filter(o => o.status === 'out_for_delivery').length || 0,
+        completed: allOrders.filter(o => o.status === 'completed' || o.status === 'payment_received').length || 0,
+        cancelled: allOrders.filter(o => o.status === 'cancelled').length || 0,
       };
 
       // Calculate top selling items - exclude cancelled orders
@@ -164,7 +221,7 @@ const AdminReports = () => {
             itemSales[itemName] = { name: itemName, quantity: 0, revenue: 0 };
           }
           itemSales[itemName].quantity += item.quantity;
-          itemSales[itemName].revenue += item.total_price;
+          itemSales[itemName].revenue += (item.total_price || 0);
         });
       });
 
@@ -199,7 +256,7 @@ const AdminReports = () => {
       });
 
       // Store individual order data for CSV export
-      setOrdersData(orders || []);
+      setOrdersData(allOrders || []);
 
     } catch (error) {
       console.error('Error fetching report data:', error);
@@ -573,6 +630,33 @@ const AdminReports = () => {
                   >
                     <i className={`${period.icon} mr-2`}></i>
                     {period.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Source Filter */}
+            <div className="mt-4 flex items-center justify-between">
+              <div className="flex items-center text-sm text-gray-600">
+                <i className="ri-database-2-line mr-2"></i>
+                <span className="font-medium">Source:</span>
+              </div>
+              <div className="flex space-x-2">
+                {[
+                  { key: 'all', label: 'All', icon: 'ri-stack-line' },
+                  { key: 'online', label: 'Online', icon: 'ri-global-line' },
+                  { key: 'kiosk', label: 'Kiosk', icon: 'ri-store-2-line' },
+                ].map((src) => (
+                  <button
+                    key={src.key}
+                    onClick={() => setSourceFilter(src.key as 'all' | 'online' | 'kiosk')}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 hover:scale-105 flex items-center ${
+                      sourceFilter === src.key
+                        ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
+                    }`}
+                  >
+                    <i className={`${src.icon} mr-2`}></i>
+                    {src.label}
                   </button>
                 ))}
               </div>

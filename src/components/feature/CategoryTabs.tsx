@@ -51,31 +51,42 @@ const CategoryTabs = ({ categories, selectedCategory, setSelectedCategory, foodI
   }; 
 
   return ( 
-    <nav 
-      role="tablist" 
-      className="flex overflow-x-auto scrollbar-hide pb-2 px-1 gap-3" 
-    > 
-      {/* All Items Button */} 
-      <CategoryButton 
-        id="all" 
-        name="All Items" 
-        icon="ri-apps-2-line" 
-        count={foodItems.length} 
-      /> 
-
-      {/* Dynamic Category Buttons */} 
-      {categories.map((category) => ( 
+    <div className="relative">
+      {/* Scroll indicators */}
+      <div className="absolute left-0 top-0 bottom-2 w-8 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none"></div>
+      <div className="absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none"></div>
+      
+      <nav 
+        role="tablist" 
+        className="flex overflow-x-auto pb-2 px-1 gap-3 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-thumb]:bg-orange-300 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-orange-400" 
+        style={{ 
+          scrollbarWidth: 'thin',
+          WebkitOverflowScrolling: 'touch',
+          scrollBehavior: 'smooth'
+        }} 
+      > 
+        {/* All Items Button */} 
         <CategoryButton 
-          key={category.id} 
-          id={category.id} 
-          name={category.name} 
-          icon={undefined}
-          count={ 
-            foodItems.filter((item) => item.category_id === category.id).length 
-          } 
+          id="all" 
+          name="All Items" 
+          icon="ri-apps-2-line" 
+          count={foodItems.length} 
         /> 
-      ))} 
-    </nav> 
+
+        {/* Dynamic Category Buttons */} 
+        {categories.map((category) => ( 
+          <CategoryButton 
+            key={category.id} 
+            id={category.id} 
+            name={category.name} 
+            icon={undefined}
+            count={ 
+              foodItems.filter((item) => item.category_id === category.id).length 
+            } 
+          /> 
+        ))} 
+      </nav> 
+    </div>
   ); 
 }; 
 

@@ -1,6 +1,6 @@
 
 import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useFoodItems } from '../../hooks/useFoodItems';
 import { useCart } from '../../hooks/useCart';
 import { useAuth } from '../../hooks/useAuth';
@@ -19,6 +19,8 @@ export default function Home() {
   const banStatus = useBanStatus();
   const { isKioskMode } = useKioskAuth();
   const { foodItems, categories, isLoading } = useFoodItems();
+  const [selectedCategory, setSelectedCategory] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Redirect to menu if in kiosk mode
   useEffect(() => {
@@ -51,6 +53,16 @@ export default function Home() {
 
   const handleViewDetails = (item: any) => {
     navigate(`/food/${item.id}`);
+  };
+
+  const openCategoryModal = (category: any) => {
+    setSelectedCategory(category);
+    setIsModalOpen(true);
+  };
+
+  const closeCategoryModal = () => {
+    setIsModalOpen(false);
+    setSelectedCategory(null);
   };
 
   // Show banned user warning if user is logged in and banned
@@ -186,15 +198,27 @@ export default function Home() {
                     <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 group-hover:text-yellow-300 transition-colors duration-300">
                       {category.name}
                     </h3>
-                    <p className="text-gray-200 text-sm leading-relaxed opacity-90">
-                      {category.description || `Explore our ${category.name.toLowerCase()} selection`}
-                    </p>
                     
-                    {/* Hover indicator */}
-                    <div className="mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <span className="inline-flex items-center text-yellow-300 text-sm font-medium">
-                        Explore <i className="ri-arrow-right-line ml-1"></i>
-                      </span>
+                    {/* Action buttons */}
+                    <div className="flex items-center gap-2 mt-3">
+                      {/* Eye button for description */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openCategoryModal(category);
+                        }}
+                        className="inline-flex items-center justify-center w-8 h-8 bg-white/20 hover:bg-white/30 text-white rounded-full transition-all duration-300 hover:scale-110"
+                        title="View description"
+                      >
+                        <i className="ri-eye-line text-sm"></i>
+                      </button>
+                      
+                      {/* Explore button */}
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <span className="inline-flex items-center text-yellow-300 text-sm font-medium">
+                          Explore <i className="ri-arrow-right-line ml-1"></i>
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -344,6 +368,61 @@ export default function Home() {
       <div className="hidden lg:block">
         <FloatingCartButton />
       </div>
+
+      {/* Category Description Modal */}
+      {isModalOpen && selectedCategory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform animate-scale-in">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-xl font-bold text-gray-900">
+                {selectedCategory.name}
+              </h3>
+              <button
+                onClick={closeCategoryModal}
+                className="inline-flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-all duration-200"
+              >
+                <i className="ri-close-line text-lg"></i>
+              </button>
+            </div>
+            
+            {/* Modal Body */}
+            <div className="p-6">
+              {selectedCategory.image_url && (
+                <img
+                  src={selectedCategory.image_url}
+                  alt={selectedCategory.name}
+                  className="w-full h-48 object-cover rounded-lg mb-4"
+                />
+              )}
+              <p className="text-gray-700 leading-relaxed mb-6">
+                {selectedCategory.description || `Explore our delicious ${selectedCategory.name.toLowerCase()} selection with premium quality ingredients and authentic flavors.`}
+              </p>
+              
+              {/* Modal Actions */}
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => {
+                    navigate('/menu');
+                    closeCategoryModal();
+                  }}
+                  className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white"
+                >
+                  <i className="ri-arrow-right-line mr-2"></i>
+                  Explore Category
+                </Button>
+                <Button
+                  onClick={closeCategoryModal}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
