@@ -93,6 +93,13 @@ export const printReceipt = (receiptData: ReceiptData): void => {
   // Check if we're in a mobile app environment
   const isMobileApp = Capacitor.isNativePlatform();
   
+  console.log('🖨️ Receipt Print Debug:', {
+    isMobileApp,
+    platform: Capacitor.getPlatform(),
+    orderNumber: receiptData.orderNumber,
+    timestamp: new Date().toISOString()
+  });
+  
   if (isMobileApp) {
     // Mobile app approach: Try multiple methods
     const receiptHtml = `
@@ -154,8 +161,11 @@ export const printReceipt = (receiptData: ReceiptData): void => {
           <div class="receipt">${receiptText}</div>
           <button class="print-button" onclick="window.print()">🖨️ Print Receipt</button>
           <script>
+            console.log('📄 Receipt page loaded for order: ${receiptData.orderNumber}');
+            
             // Auto-print after page loads
             window.addEventListener('load', function() {
+              console.log('🖨️ Auto-printing receipt...');
               setTimeout(function() {
                 window.print();
               }, 1000);
@@ -163,9 +173,16 @@ export const printReceipt = (receiptData: ReceiptData): void => {
             
             // Handle print completion
             window.addEventListener('afterprint', function() {
+              console.log('✅ Print dialog closed');
               setTimeout(function() {
                 window.close();
               }, 2000);
+            });
+            
+            // Handle print errors
+            window.addEventListener('error', function(e) {
+              console.error('❌ Print error:', e);
+              alert('Print error: ' + e.message);
             });
           </script>
         </body>
@@ -173,27 +190,36 @@ export const printReceipt = (receiptData: ReceiptData): void => {
     `;
     
     // Try to use Capacitor Browser first
+    console.log('🌐 Attempting to open receipt in Capacitor Browser...');
     try {
       // Create a blob URL for the receipt HTML
       const blob = new Blob([receiptHtml], { type: 'text/html' });
       const receiptUrl = URL.createObjectURL(blob);
       
+      console.log('📄 Blob URL created:', receiptUrl);
+      
       Browser.open({ url: receiptUrl, presentationStyle: 'popover' })
         .then(() => {
+          console.log('✅ Browser opened successfully');
           // Clean up the blob URL after a delay
           setTimeout(() => {
             URL.revokeObjectURL(receiptUrl);
+            console.log('🧹 Blob URL cleaned up');
           }, 30000);
         })
-        .catch(() => {
+        .catch((error) => {
+          console.error('❌ Browser open failed:', error);
           // Fallback: Try to open in system browser
+          console.log('🔄 Falling back to system browser');
           window.open(receiptUrl, '_system');
           setTimeout(() => {
             URL.revokeObjectURL(receiptUrl);
           }, 30000);
         });
     } catch (browserError) {
+      console.error('❌ Browser plugin error:', browserError);
       // If browser fails, try direct print dialog
+      console.log('🔄 Falling back to direct print window');
       try {
         const printWindow = window.open('', '_blank', 'width=400,height=600');
         if (printWindow) {
@@ -204,6 +230,7 @@ export const printReceipt = (receiptData: ReceiptData): void => {
           }, 500);
         } else {
           // Final fallback: clipboard
+          console.log('🔄 Falling back to clipboard');
           navigator.clipboard.writeText(receiptText).then(() => {
             alert('Receipt copied to clipboard! Please paste it to print.');
           }).catch(() => {
@@ -211,6 +238,7 @@ export const printReceipt = (receiptData: ReceiptData): void => {
           });
         }
       } catch (printError) {
+        console.error('❌ Print window error:', printError);
         // Ultimate fallback
         navigator.clipboard.writeText(receiptText).then(() => {
           alert('Receipt copied to clipboard! Please paste it to print.');
