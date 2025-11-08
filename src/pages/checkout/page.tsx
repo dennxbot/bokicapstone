@@ -13,6 +13,7 @@ import { type CartItemWithSize } from '../../types';
 import Button from '../../components/base/Button';
 import Input from '../../components/base/Input';
 import BannedUserWarning from '../../components/feature/BannedUserWarning';
+import { toast } from 'react-hot-toast';
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -215,8 +216,36 @@ export default function Checkout() {
 
         printReceipt(receiptData);
         await clearCart();
-        alert('Order placed successfully! Please take your receipt to the cashier for payment.');
-        navigate('/menu');
+        
+        // Show success toast with print button for mobile
+        toast.success(
+          <div className="text-center">
+            <div className="font-semibold mb-2">Order placed successfully!</div>
+            <div className="text-sm mb-3">Please take your receipt to the cashier for payment.</div>
+            <button
+              onClick={() => printReceipt(receiptData)}
+              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            >
+              🖨️ Print Receipt Again
+            </button>
+          </div>,
+          {
+            duration: 8000,
+            position: 'top-center',
+            style: {
+              background: '#ffffff',
+              color: '#1f2937',
+              border: '2px solid #f97316',
+              borderRadius: '12px',
+              padding: '16px',
+              boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+            },
+          }
+        );
+        
+        setTimeout(() => {
+          navigate('/menu');
+        }, 3000);
       } else {
         if (!order) {
           throw new Error('Failed to create order');

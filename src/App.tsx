@@ -2,6 +2,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AppRoutes } from './router'
 import CartNotification from './components/feature/CartNotification'
+import KioskNavigation from './components/feature/KioskNavigation'
 
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
         v7_relativeSplatPath: true,
       }}
     >
+      <KioskNavigation />
       <AppRoutes />
       <CartNotification />
       <Toaster

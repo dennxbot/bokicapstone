@@ -6,11 +6,18 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:kiosk": "cd kiosk-app-capacitor && vite build --config vite.config.kiosk.ts && cd .. && npx cap sync",
     "lint": "eslint .",
     "preview": "vite preview",
     "debug-order": "node debug-order-issue.js"
   },
   "dependencies": {
+    "@capacitor/android": "^7.4.4",
+    "@capacitor/app": "^7.1.0",
+    "@capacitor/browser": "^7.0.2",
+    "@capacitor/cli": "^7.4.4",
+    "@capacitor/core": "^7.4.4",
+    "@capacitor/ios": "^7.4.4",
     "@supabase/supabase-js": "^2.39.3",
     "dotenv": "^17.2.3",
     "i18next": "^25.6.0",

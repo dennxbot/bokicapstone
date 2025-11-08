@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "skipLibCheck": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "allowJs": true,
+    "emitDeclarationOnly": true,
+    "moduleDetection": "force",
+    "jsx": "react-jsx"
+  },
+  "include": ["vite.config.kiosk.ts"]
+}
