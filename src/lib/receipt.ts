@@ -137,27 +137,15 @@ export const printReceipt = (receiptData: ReceiptData): void => {
               box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
               z-index: 1000;
             }
-            .close-button {
-              position: fixed;
-              top: 20px;
-              right: 20px;
-              background: #6b7280;
-              color: white;
-              border: none;
-              padding: 10px 15px;
-              border-radius: 6px;
-              font-size: 14px;
-              cursor: pointer;
-              z-index: 1000;
-            }
+            /* Close button styles removed to prevent accidental app closure */
             @media print {
-              .print-button, .close-button { display: none; }
+              .print-button { display: none; }
               body { margin: 0; padding: 0; }
             }
           </style>
         </head>
         <body>
-          <button class="close-button" onclick="window.close()">✕ Close</button>
+          <!-- Close button removed to prevent accidental app closure -->
           <div class="receipt">${receiptText}</div>
           <button class="print-button" onclick="window.print()">🖨️ Print Receipt</button>
           <script>
@@ -167,22 +155,50 @@ export const printReceipt = (receiptData: ReceiptData): void => {
             window.addEventListener('load', function() {
               console.log('🖨️ Auto-printing receipt...');
               setTimeout(function() {
-                window.print();
+                try {
+                  window.print();
+                } catch (printError) {
+                  console.error('❌ Auto-print failed:', printError);
+                  // Don't close window on print error
+                }
               }, 1000);
             });
             
-            // Handle print completion
+            // Handle print completion - DO NOT close window in mobile app
             window.addEventListener('afterprint', function() {
               console.log('✅ Print dialog closed');
-              setTimeout(function() {
-                window.close();
-              }, 2000);
+              // Don't close the window in mobile app to prevent app exit
+              // Just show a message that printing is complete
+              console.log('🖨️ Receipt printing completed');
+              
+              // Optional: Show a completion message to user
+              const completionMsg = document.createElement('div');
+              completionMsg.innerHTML = '<div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #10b981; color: white; padding: 20px; border-radius: 8px; text-align: center; z-index: 9999;">✅ Receipt printed successfully!<br><small>You can now close this window</small></div>';
+              document.body.appendChild(completionMsg);
+              
+              // Remove message after 3 seconds
+              setTimeout(() => {
+                if (completionMsg.parentNode) {
+                  completionMsg.parentNode.removeChild(completionMsg);
+                }
+              }, 3000);
             });
             
             // Handle print errors
             window.addEventListener('error', function(e) {
               console.error('❌ Print error:', e);
-              alert('Print error: ' + e.message);
+              // Don't show alert in mobile app as it might be disruptive
+              console.error('Print error details:', e.message);
+            });
+            
+            // Prevent accidental window closure
+            window.addEventListener('beforeunload', function(e) {
+              console.log('🚪 Window close attempted - preventing app exit');
+              // In mobile app, we don't want to close the main app
+              // Just log it and prevent the default behavior
+              e.preventDefault();
+              e.returnValue = '';
+              return '';
             });
           </script>
         </body>
@@ -192,29 +208,20 @@ export const printReceipt = (receiptData: ReceiptData): void => {
     // Try to use Capacitor Browser first
     console.log('🌐 Attempting to open receipt in Capacitor Browser...');
     try {
-      // Create a blob URL for the receipt HTML
-      const blob = new Blob([receiptHtml], { type: 'text/html' });
-      const receiptUrl = URL.createObjectURL(blob);
+      // Use a data URL instead of blob URL for better mobile compatibility
+      const receiptDataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(receiptHtml);
       
-      console.log('📄 Blob URL created:', receiptUrl);
+      console.log('📄 Data URL created (length:', receiptDataUrl.length, 'chars)');
       
-      Browser.open({ url: receiptUrl, presentationStyle: 'popover' })
+      Browser.open({ url: receiptDataUrl, presentationStyle: 'popover' })
         .then(() => {
           console.log('✅ Browser opened successfully');
-          // Clean up the blob URL after a delay
-          setTimeout(() => {
-            URL.revokeObjectURL(receiptUrl);
-            console.log('🧹 Blob URL cleaned up');
-          }, 30000);
         })
         .catch((error) => {
           console.error('❌ Browser open failed:', error);
           // Fallback: Try to open in system browser
           console.log('🔄 Falling back to system browser');
-          window.open(receiptUrl, '_system');
-          setTimeout(() => {
-            URL.revokeObjectURL(receiptUrl);
-          }, 30000);
+          window.open(receiptDataUrl, '_system');
         });
     } catch (browserError) {
       console.error('❌ Browser plugin error:', browserError);
