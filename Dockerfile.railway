@@ -1,15 +1,30 @@
-# Multi-stage Railway Dockerfile to avoid permission issues
+# Railway Dockerfile using pre-built approach
 FROM node:18-alpine AS builder
 
 WORKDIR /build
 
-# Copy and install dependencies
+# Install dependencies as root first
 COPY package*.json ./
 RUN npm install --production=false
 
-# Copy source and build using our ES module build script
+# Copy source code
 COPY . .
-RUN node build-railway.mjs
+
+# Build using Node.js directly to avoid permission issues
+RUN node -e "
+import('./node_modules/vite/dist/node/index.js').then(({ build }) => {
+  return build({
+    configFile: 'vite.config.ts',
+    mode: 'production',
+    logLevel: 'info'
+  });
+}).then(() => {
+  console.log('✅ Build completed successfully!');
+}).catch(err => {
+  console.error('❌ Build failed:', err);
+  process.exit(1);
+});
+"
 
 # Production stage
 FROM node:18-alpine AS production

@@ -3,6 +3,10 @@
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 console.log('🚀 Starting Railway build process...');
 
@@ -12,20 +16,16 @@ if (fs.existsSync('out')) {
   fs.rmSync('out', { recursive: true, force: true });
 }
 
-console.log('📦 Building with Vite...');
+console.log('📦 Building with Vite using direct Node.js approach...');
 try {
-  // Use locally installed vite directly to avoid npx permission issues
-  const vitePath = './node_modules/.bin/vite';
+  // Import and run Vite build programmatically
+  const { build } = await import('./node_modules/vite/dist/node/index.js');
   
-  if (!fs.existsSync(vitePath)) {
-    console.log('📥 Installing Vite locally...');
-    execSync('npm install vite --save-dev', { stdio: 'inherit' });
-  }
-  
-  console.log('🔨 Running Vite build...');
-  execSync(`${vitePath} build`, {
-    stdio: 'inherit',
-    env: { ...process.env, NODE_ENV: 'production' }
+  console.log('🔨 Running Vite build programmatically...');
+  await build({
+    configFile: 'vite.config.ts',
+    mode: 'production',
+    logLevel: 'info'
   });
   
   console.log('✅ Vite build completed successfully!');
