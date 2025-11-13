@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node build-railway.js",
-    "build:railway": "node build-railway.js",
+    "build": "node build-railway-static.mjs",
+    "build:railway": "node build-railway-static.mjs",
     "build:kiosk": "cd kiosk-app-capacitor && vite build --config vite.config.kiosk.ts && cd .. && npx cap sync",
     "lint": "eslint .",
     "preview": "vite preview",
