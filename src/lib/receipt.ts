@@ -100,7 +100,10 @@ export const printReceipt = (receiptData: ReceiptData): void => {
     timestamp: new Date().toISOString()
   });
   
-  if (isMobileApp) {
+  // Safety check for Browser plugin availability
+  const isBrowserPluginAvailable = typeof Browser !== 'undefined' && Browser.open;
+  
+  if (isMobileApp && isBrowserPluginAvailable) {
     // Mobile app approach: Try multiple methods
     const receiptHtml = `
       <!DOCTYPE html>
@@ -213,7 +216,12 @@ export const printReceipt = (receiptData: ReceiptData): void => {
       
       console.log('📄 Data URL created (length:', receiptDataUrl.length, 'chars)');
       
-      Browser.open({ url: receiptDataUrl, presentationStyle: 'popover' })
+      // Use a more robust approach with proper error handling
+      Browser.open({ 
+        url: receiptDataUrl, 
+        presentationStyle: 'popover',
+        toolbarColor: '#f97316'
+      })
         .then(() => {
           console.log('✅ Browser opened successfully');
         })
@@ -221,7 +229,12 @@ export const printReceipt = (receiptData: ReceiptData): void => {
           console.error('❌ Browser open failed:', error);
           // Fallback: Try to open in system browser
           console.log('🔄 Falling back to system browser');
-          window.open(receiptDataUrl, '_system');
+          try {
+            window.open(receiptDataUrl, '_system');
+          } catch (systemError) {
+            console.error('❌ System browser failed:', systemError);
+            throw error; // Re-throw original error to trigger next fallback
+          }
         });
     } catch (browserError) {
       console.error('❌ Browser plugin error:', browserError);
@@ -256,55 +269,81 @@ export const printReceipt = (receiptData: ReceiptData): void => {
     }
     
   } else {
-    // Web approach: Create a new window for printing
-    const printWindow = window.open('', '_blank', 'width=400,height=600');
+    // Fallback approach for mobile when Browser plugin is unavailable or fails
+    console.log('🔄 Using fallback print approach for mobile/web');
     
-    if (printWindow) {
-      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>Order Receipt - ${receiptData.orderNumber}</title>
-            <style>
-              body {
-                font-family: 'Courier New', monospace;
-                font-size: 12px;
-                line-height: 1.4;
-                margin: 20px;
-                white-space: pre-wrap;
-              }
-              .receipt {
-                max-width: 300px;
-                margin: 0 auto;
-              }
-              @media print {
-                body { margin: 0; }
-                .no-print { display: none; }
-              }
-            </style>
-          </head>
-          <body>
-            <div class="receipt">${receiptText}</div>
-            <div class="no-print" style="margin-top: 20px; text-align: center;">
-              <button onclick="window.print()" style="padding: 10px 20px; font-size: 14px;">Print Receipt</button>
-              <button onclick="window.close()" style="padding: 10px 20px; font-size: 14px; margin-left: 10px;">Close</button>
-            </div>
-          </body>
-        </html>
-      `);
+    // Try to create a simple print window
+    try {
+      const printWindow = window.open('', '_blank', 'width=400,height=600,scrollbars=yes,resizable=yes');
       
-      printWindow.document.close();
+      if (printWindow) {
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Order Receipt - ${receiptData.orderNumber}</title>
+              <style>
+                body {
+                  font-family: 'Courier New', monospace;
+                  font-size: 12px;
+                  line-height: 1.4;
+                  margin: 20px;
+                  white-space: pre-wrap;
+                }
+                .receipt {
+                  max-width: 300px;
+                  margin: 0 auto;
+                }
+                @media print {
+                  body { margin: 0; }
+                  .no-print { display: none; }
+                }
+              </style>
+            </head>
+            <body>
+              <div class="receipt">${receiptText}</div>
+              <div class="no-print" style="margin-top: 20px; text-align: center;">
+                <button onclick="window.print()" style="padding: 10px 20px; font-size: 14px;">Print Receipt</button>
+                <button onclick="window.close()" style="padding: 10px 20px; font-size: 14px; margin-left: 10px;">Close</button>
+              </div>
+            </body>
+          </html>
+        `);
+
+        printWindow.document.close();
+        
+        // Auto-print after a short delay
+        setTimeout(() => {
+          try {
+            printWindow.print();
+          } catch (printError) {
+            console.error('❌ Print failed:', printError);
+            // Don't close window on print error
+          }
+        }, 500);
+      } else {
+        // Popup blocked - use clipboard fallback
+        throw new Error('Popup blocked');
+      }
+    } catch (windowError) {
+      console.error('❌ Print window error:', windowError);
+      // Ultimate fallback: clipboard
+      console.log('🔄 Ultimate fallback: clipboard');
       
-      // Auto-print after a short delay
-      setTimeout(() => {
-        printWindow.print();
-      }, 500);
-    } else {
-      // Fallback: copy to clipboard
+      // Show a simple alert with the receipt text that user can copy
+      const receiptWithInstructions = `${receiptText}
+
+========================================
+📋 RECEIPT COPIED TO CLIPBOARD
+Please copy the above text and paste it
+into any text editor to print.
+========================================`;
+      
       navigator.clipboard.writeText(receiptText).then(() => {
-        alert('Receipt copied to clipboard! Please paste it to print.');
+        alert(receiptWithInstructions);
       }).catch(() => {
-        alert('Unable to print receipt. Please try again.');
+        // If clipboard fails, show the receipt in the alert
+        alert(receiptWithInstructions);
       });
     }
   }
