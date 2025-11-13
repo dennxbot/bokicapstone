@@ -10,6 +10,8 @@ const config: CapacitorConfig = {
   },
   android: {
     webContentsDebuggingEnabled: true,
+    allowMixedContent: true,
+    captureInput: true,
   },
   ios: {
     allowsLinkPreview: false,
@@ -37,6 +39,8 @@ const config: CapacitorConfig = {
       'EnableViewportScale': 'false',
       'AllowInlineMediaPlayback': 'true',
       'MediaPlaybackRequiresUserAction': 'false',
+      'LoadUrlTimeoutValue': '60000',
+      'WebViewEngine': 'Crosswalk',
     }
   }
 };
