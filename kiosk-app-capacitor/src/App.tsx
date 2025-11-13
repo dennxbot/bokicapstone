@@ -33,7 +33,7 @@ const KioskRedirect: React.FC = () => {
         <h1>🏪 BOKI Kiosk</h1>
         <p>Loading kiosk interface...</p>
         <p style={{ fontSize: '12px', color: '#666' }}>
-          This app loads your kiosk from: https://bokifinal.netlify.app/kiosk
+          This app loads your kiosk from: https://bokicapstone.vercel.app/kiosk
         </p>
       </div>
     </div>

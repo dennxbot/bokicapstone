@@ -5,8 +5,8 @@ const config: CapacitorConfig = {
   appName: 'BOKI Kiosk',
   webDir: 'kiosk-app-capacitor/dist-kiosk',
   server: {
-    url: 'https://bokifinal.netlify.app/kiosk',
-    allowNavigation: ['bokifinal.netlify.app', '*.netlify.app'],
+    url: 'https://bokicapstone.vercel.app/kiosk',
+    allowNavigation: ['bokicapstone.vercel.app', '*.vercel.app'],
   },
   android: {
     webContentsDebuggingEnabled: true,

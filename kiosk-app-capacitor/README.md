@@ -194,7 +194,7 @@ To update the kiosk app:
 ## 📞 Support
 
 The kiosk functionality relies on your hosted backend at:
-- **Live URL**: https://bokifinal.netlify.app/kiosk
+- **Live URL**: https://bokicapstone.vercel.app/kiosk
 - **API**: Uses your existing Supabase backend
 
 ## 📄 License

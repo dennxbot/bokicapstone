@@ -70,7 +70,7 @@ npm run cap:open:ios      # Opens Xcode
 
 #### Important Settings:
 - **Web Directory**: `kiosk-app-capacitor/dist-kiosk`
-- **Remote URL**: `https://bokifinal.netlify.app/kiosk`
+- **Remote URL**: `https://bokicapstone.vercel.app/kiosk`
 - **App ID**: `com.boki.kiosk`
 - **Orientation**: Landscape (configurable)
 
