@@ -153,14 +153,15 @@ export const printReceiptBluetooth = async (receiptData: ReceiptData): Promise<b
     console.log('🔵 Attempting Bluetooth thermal printer connection...');
     
     // Check if Web Bluetooth API is available
-    if (!navigator.bluetooth) {
+    const bluetoothNavigator = navigator as any;
+    if (!bluetoothNavigator.bluetooth) {
       console.error('❌ Web Bluetooth API not available');
       alert('Bluetooth printing is not supported on this device/browser');
       return false;
     }
     
     // Request Bluetooth device
-    const device = await navigator.bluetooth.requestDevice({
+    const device = await bluetoothNavigator.bluetooth.requestDevice({
       filters: [
         { services: ['49535343-fe7d-4ae5-8fa9-9fafd205e455'] }, // Common thermal printer service
         { namePrefix: 'Printer' },
@@ -198,7 +199,7 @@ export const printReceiptBluetooth = async (receiptData: ReceiptData): Promise<b
     
     return true;
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Bluetooth printing failed:', error);
     
     // Handle specific errors
