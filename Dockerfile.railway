@@ -1,18 +1,16 @@
-# Railway Dockerfile using simplified build approach
+# Railway Dockerfile using static build approach
 FROM node:18-alpine AS builder
 
 WORKDIR /build
 
-# Install dependencies
+# Copy package files first
 COPY package*.json ./
-RUN npm install --production=false
 
-# Copy source code
-COPY . .
+# Copy build script
+COPY build-railway-static.mjs ./
 
-# Build using a simple approach - just copy files and install serve
-# Skip the build process entirely and serve the source files directly
-# This is a temporary workaround to get the deployment working
+# Build using static script (creates a working HTML file)
+RUN node build-railway-static.mjs
 
 # Production stage
 FROM node:18-alpine AS production
@@ -26,9 +24,8 @@ RUN adduser -S nodejs -u 1001
 # Install serve globally
 RUN npm install -g serve
 
-# For now, let's try serving the source files directly
-# This will help us verify the Docker setup works
-COPY --from=builder --chown=nodejs:nodejs /build ./
+# Copy built files from builder stage
+COPY --from=builder --chown=nodejs:nodejs /build/out ./out
 
 # Switch to non-root user
 USER nodejs
@@ -36,5 +33,5 @@ USER nodejs
 # Expose port
 EXPOSE 3000
 
-# Start the app by serving the root directory
-CMD ["serve", "-s", ".", "-l", "3000"]
+# Start the app
+CMD ["serve", "-s", "out", "-l", "3000"]
