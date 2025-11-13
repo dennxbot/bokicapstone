@@ -1,0 +1,25 @@
+# Railway-specific Dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production
+
+# Copy source code
+COPY . .
+
+# Build the app (skip TypeScript compilation)
+RUN npx vite build
+
+# Install serve globally
+RUN npm install -g serve
+
+# Expose port
+EXPOSE 3000
+
+# Start the app
+CMD ["npx", "serve", "-s", "out", "-p", "3000"]

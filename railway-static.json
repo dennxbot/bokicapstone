@@ -1,7 +1,7 @@
 {
   "build": {
     "builder": "STATIC",
-    "buildCommand": "npm install && npx vite build",
+    "buildCommand": "npx vite build",
     "outputDirectory": "out"
   },
   "deploy": {

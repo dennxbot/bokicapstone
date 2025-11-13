@@ -6,11 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:railway": "npm install && vite build",
+    "build:railway": "node build-railway.js",
     "build:kiosk": "cd kiosk-app-capacitor && vite build --config vite.config.kiosk.ts && cd .. && npx cap sync",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "npx serve -s out -p $PORT",
+    "start": "npx serve -s out -p 3000",
     "debug-order": "node debug-order-issue.js"
   },
   "dependencies": {

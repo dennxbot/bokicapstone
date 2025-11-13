@@ -1,0 +1,16 @@
+[phases.setup]
+nixPkgs = ["nodejs_18", "npm"]
+
+[phases.install]
+cmds = ["npm install"]
+
+[phases.build]
+cmds = ["npm run build:railway"]
+dependsOn = ["install"]
+
+[start]
+cmd = "npx serve -s out -p ${PORT:-3000}"
+
+[variables]
+NODE_ENV = "production"
+PORT = "3000"
