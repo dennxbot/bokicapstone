@@ -1,9 +1,0 @@
-build:
-  builder: NODEJS
-  buildCommand: npm run build
-  
-deploy:
-  startCommand: npm run preview
-  restartPolicy:
-    type: ON_FAILURE
-    maxRetries: 3
