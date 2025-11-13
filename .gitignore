@@ -14,7 +14,7 @@ yarn-error.log*
 # Build outputs
 dist/
 build/
-# out/  # Commented out for Railway deployment - we need to include built files
+out/
 
 # IDE and editor files
 .vscode/

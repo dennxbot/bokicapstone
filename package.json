@@ -5,12 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node build-railway-static.mjs",
-    "build:railway": "node build-railway-static.mjs",
+    "build": "vite build",
     "build:kiosk": "cd kiosk-app-capacitor && vite build --config vite.config.kiosk.ts && cd .. && npx cap sync",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "npx serve -s out -p 3000",
     "debug-order": "node debug-order-issue.js"
   },
   "dependencies": {
