@@ -1,7 +1,7 @@
 {
   "build": {
     "builder": "STATIC",
-    "buildCommand": "npm install && node build-railway.js",
+    "buildCommand": "npm install && node build-railway-static.mjs",
     "outputDirectory": "out"
   },
   "deploy": {

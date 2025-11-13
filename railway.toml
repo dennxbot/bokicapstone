@@ -3,7 +3,7 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile.railway"
 
 [deploy]
-startCommand = "npm start"
+startCommand = "serve -s out -l 3000"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
 
