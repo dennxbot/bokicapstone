@@ -7,9 +7,9 @@ WORKDIR /build
 COPY package*.json ./
 RUN npm install --production=false
 
-# Copy source and build using our custom build script
+# Copy source and build using our ES module build script
 COPY . .
-RUN node build-railway.js
+RUN node build-railway.mjs
 
 # Production stage
 FROM node:18-alpine AS production
