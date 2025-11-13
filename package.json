@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "build:kiosk": "cd kiosk-app-capacitor && vite build --config vite.config.kiosk.ts && cd .. && npx cap sync",
+    "build": "npx vite build",
+    "build:kiosk": "cd kiosk-app-capacitor && npx vite build --config vite.config.kiosk.ts && cd .. && npx cap sync",
     "lint": "eslint .",
     "preview": "vite preview",
     "debug-order": "node debug-order-issue.js"
