@@ -87,7 +87,152 @@ Thank you for choosing BOKI!
   return receipt;
 };
 
-export const printReceipt = (receiptData: ReceiptData): void => {
+// ESC/POS command generator for thermal printers
+export const generateESCPOS = (receiptData: ReceiptData): Uint8Array => {
+  const { orderId, orderNumber, orderType, items, totalAmount, timestamp } = receiptData;
+  
+  // Format order type for display
+  const displayOrderType = orderType === 'delivery' ? 'DINE-IN' : 'TAKE-OUT';
+  
+  const commands = [];
+  
+  // Initialize printer
+  commands.push('\x1B\x40'); // Initialize
+  commands.push('\x1B\x61\x01'); // Center align
+  
+  // Header
+  commands.push('\x1B\x21\x30'); // Double height, double width
+  commands.push('BOKI RESTAURANT\n');
+  commands.push('\x1B\x21\x00'); // Normal text
+  commands.push('\x1B\x61\x00'); // Left align
+  commands.push('Order Receipt (Kiosk)\n');
+  commands.push('================================\n');
+  
+  // Order details
+  commands.push(`Order #: ${orderNumber}\n`);
+  commands.push(`Date: ${timestamp.toLocaleDateString()}\n`);
+  commands.push(`Time: ${timestamp.toLocaleTimeString()}\n`);
+  commands.push(`Type: ${displayOrderType}\n`);
+  commands.push('--------------------------------\n');
+  
+  // Items
+  commands.push('ITEMS\n');
+  commands.push('--------------------------------\n');
+  
+  items.forEach(item => {
+    const itemLine = `${item.name}${item.size_name ? ` (${item.size_name})` : ''}`;
+    const qtyPrice = `${item.quantity}x ${formatPesoSimple(item.price)}`;
+    const total = formatPesoSimple(item.price * item.quantity);
+    
+    commands.push(`${itemLine}\n`);
+    commands.push(`  ${qtyPrice} = ${total}\n\n`);
+  });
+  
+  commands.push('--------------------------------\n');
+  commands.push(`TOTAL: ${formatPesoSimple(totalAmount)}\n`);
+  commands.push('--------------------------------\n\n');
+  
+  // Footer
+  commands.push('Please take this receipt to the cashier\n');
+  commands.push('to complete your payment.\n\n');
+  commands.push(`Order ID: ${orderId}\n\n`);
+  commands.push('Thank you for choosing BOKI!\n');
+  commands.push('================================\n');
+  
+  // Cut paper
+  commands.push('\n\n\n'); // Feed lines
+  commands.push('\x1D\x56\x00'); // Cut paper (partial cut)
+  
+  const fullText = commands.join('');
+  return new TextEncoder().encode(fullText);
+};
+
+// Bluetooth thermal printer integration
+export const printReceiptBluetooth = async (receiptData: ReceiptData): Promise<boolean> => {
+  try {
+    console.log('🔵 Attempting Bluetooth thermal printer connection...');
+    
+    // Check if Web Bluetooth API is available
+    if (!navigator.bluetooth) {
+      console.error('❌ Web Bluetooth API not available');
+      alert('Bluetooth printing is not supported on this device/browser');
+      return false;
+    }
+    
+    // Request Bluetooth device
+    const device = await navigator.bluetooth.requestDevice({
+      filters: [
+        { services: ['49535343-fe7d-4ae5-8fa9-9fafd205e455'] }, // Common thermal printer service
+        { namePrefix: 'Printer' },
+        { namePrefix: 'Thermal' },
+        { namePrefix: 'ESC' }
+      ],
+      optionalServices: ['49535343-fe7d-4ae5-8fa9-9fafd205e455']
+    });
+    
+    console.log('📱 Found Bluetooth device:', device.name);
+    
+    // Connect to device
+    const server = await device.gatt.connect();
+    console.log('🔗 Connected to GATT server');
+    
+    // Get printer service
+    const service = await server.getPrimaryService('49535343-fe7d-4ae5-8fa9-9fafd205e455');
+    
+    // Get write characteristic
+    const characteristic = await service.getCharacteristic('49535343-8841-43f4-a8d4-ecbe34729bb3');
+    
+    // Generate ESC/POS commands
+    const escPosData = generateESCPOS(receiptData);
+    
+    // Send print data
+    await characteristic.writeValue(escPosData);
+    
+    console.log('✅ Receipt sent to Bluetooth thermal printer');
+    
+    // Disconnect after printing
+    setTimeout(() => {
+      server.disconnect();
+      console.log('🔌 Disconnected from printer');
+    }, 1000);
+    
+    return true;
+    
+  } catch (error) {
+    console.error('❌ Bluetooth printing failed:', error);
+    
+    // Handle specific errors
+    if (error.name === 'NotFoundError') {
+      alert('No Bluetooth printer found. Please ensure your thermal printer is powered on and in pairing mode.');
+    } else if (error.name === 'SecurityError') {
+      alert('Bluetooth permission denied. Please allow Bluetooth access.');
+    } else if (error.name === 'NetworkError') {
+      alert('Bluetooth connection failed. Please try again.');
+    } else {
+      alert(`Bluetooth printing error: ${error.message}`);
+    }
+    
+    return false;
+  }
+};
+
+// Store current receipt data for Bluetooth printing from print window
+let currentReceiptData: ReceiptData | null = null;
+
+// Global function for print window to call Bluetooth printing
+(window as any).handleBluetoothPrint = async (): Promise<boolean> => {
+  console.log('🔄 Print window requesting Bluetooth print...');
+  if (currentReceiptData) {
+    return await printReceiptBluetooth(currentReceiptData);
+  }
+  console.error('❌ No receipt data available for Bluetooth printing');
+  return false;
+};
+
+export const printReceipt = async (receiptData: ReceiptData): Promise<void> => {
+  // Store receipt data for Bluetooth printing from print window
+  currentReceiptData = receiptData;
+  
   const receiptText = formatReceiptText(receiptData);
   
   // Check if we're in a mobile app environment
@@ -103,7 +248,23 @@ export const printReceipt = (receiptData: ReceiptData): void => {
   // Safety check for Browser plugin availability
   const isBrowserPluginAvailable = typeof Browser !== 'undefined' && Browser.open;
   
-  if (isMobileApp && isBrowserPluginAvailable) {
+  // Try Bluetooth printing first for mobile devices
+  if (isMobileApp) {
+    console.log('🔵 Attempting Bluetooth thermal printer...');
+    
+    try {
+      const bluetoothSuccess = await printReceiptBluetooth(receiptData);
+      if (bluetoothSuccess) {
+        console.log('✅ Bluetooth printing successful');
+        return;
+      }
+      console.log('🔵 Bluetooth printing failed, falling back to browser method');
+    } catch (bluetoothError) {
+      console.error('❌ Bluetooth printing error:', bluetoothError);
+    }
+  }
+  
+  if (isMobileApp) {
     // Mobile app approach: Use a simple print window approach
     console.log('🔄 Using mobile-optimized print approach');
     
@@ -162,18 +323,59 @@ export const printReceipt = (receiptData: ReceiptData): void => {
                   cursor: pointer;
                   z-index: 1000;
                 }
+                .bluetooth-button {
+                  position: fixed;
+                  bottom: 80px;
+                  right: 20px;
+                  background: #3b82f6;
+                  color: white;
+                  border: none;
+                  padding: 15px 25px;
+                  border-radius: 8px;
+                  font-size: 16px;
+                  font-weight: bold;
+                  cursor: pointer;
+                  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+                  z-index: 1000;
+                }
                 @media print {
-                  .print-button, .close-button { display: none; }
+                  .print-button, .close-button, .bluetooth-button { display: none; }
                   body { margin: 0; padding: 0; }
                 }
               </style>
             </head>
             <body>
               <div class="receipt">${receiptText}</div>
+              <button class="bluetooth-button" onclick="handleBluetooth()">🔵 Print via Bluetooth</button>
               <button class="print-button" onclick="handlePrint()">🖨️ Print Receipt</button>
               <button class="close-button" onclick="handleClose()">✕ Close</button>
               <script>
                 console.log('📄 Receipt page loaded for order: ${receiptData.orderNumber}');
+                
+                async function handleBluetooth() {
+                  console.log('🔵 Attempting Bluetooth print...');
+                  try {
+                    // This will trigger the Bluetooth printing from the parent context
+                    if (window.opener && window.opener.handleBluetoothPrint) {
+                      const success = await window.opener.handleBluetoothPrint();
+                      if (success) {
+                        const completionMsg = document.createElement('div');
+                        completionMsg.innerHTML = '<div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #3b82f6; color: white; padding: 20px; border-radius: 8px; text-align: center; z-index: 9999;">✅ Sent to Bluetooth printer!</div>';
+                        document.body.appendChild(completionMsg);
+                        setTimeout(() => {
+                          if (completionMsg.parentNode) {
+                            completionMsg.parentNode.removeChild(completionMsg);
+                          }
+                        }, 2000);
+                      }
+                    } else {
+                      alert('Bluetooth printing not available. Please use the regular print button.');
+                    }
+                  } catch (error) {
+                    console.error('❌ Bluetooth print failed:', error);
+                    alert('Bluetooth printing failed. Please try the regular print button.');
+                  }
+                }
                 
                 function handlePrint() {
                   console.log('🖨️ Printing receipt...');
